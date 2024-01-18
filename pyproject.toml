@@ -1,0 +1,34 @@
+[tool.poetry]
+name = "d2spy-pkg"
+version = "0.0.1"
+license = "MIT"
+description = "Python package for retrieving Data to Science datasets."
+authors = ["Ben Hancock <hancocb@purdue.edu>"]
+readme = "README.md"
+keywords = ["python", "data to science", "uas", "data management"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Education",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+packages = [{include = "d2spy"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+requests = "^2.31.0"
+
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.4.4"
+requests-mock = "^1.11.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
