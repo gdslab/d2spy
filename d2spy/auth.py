@@ -1,6 +1,6 @@
 import json
 import requests
-from requests import Response, Session
+from requests import exceptions, Response, Session
 from typing import Union
 from urllib.parse import urlparse
 
@@ -16,6 +16,9 @@ class Auth:
         self.password: str = password
         self.host: str = host
 
+        if test_host(self.host) is False:
+            raise ValueError("unable to connect to provided host")
+
         self.session: Session = requests.session()
 
     def login(self) -> Union[User, None]:
@@ -28,19 +31,20 @@ class Auth:
 
         if response.status_code == 200 and "access_token" in response.cookies:
             self.session.cookies.set(
-                "access_token",
-                response.cookies.get("access_token"),
-                domain=urlparse(self.host).netloc,
+                "access_token", response.cookies.get("access_token")
             )
             user = self.get_current_user()
-            return User.from_dict(user)
+            if user:
+                return User.from_dict(user)
+            else:
+                return None
         else:
             pretty_print_response(response)
             return None
 
     def logout(self) -> None:
         """Logout of D2S platform."""
-        self.session.cookies.clear(domain=urlparse(self.host).netloc)
+        self.session.cookies.clear(name="access_token")
         self.session.close()
         print("session ended")
 
@@ -55,3 +59,16 @@ class Auth:
         else:
             pretty_print_response(response)
             return None
+
+
+def test_host(host: str) -> bool:
+    """Return true if host returns HTTP 200 else false."""
+    response = None
+    try:
+        response = requests.get(host)
+    except exceptions.ConnectionError:
+        response = None
+    finally:
+        if response and response.status_code == 200:
+            return True
+    return False
