@@ -1,6 +1,7 @@
+import json
 import requests
 from datetime import date
-from typing import List
+from typing import List, Optional
 from uuid import UUID
 
 from d2spy import models, schemas
@@ -44,13 +45,11 @@ class Project:
         Returns:
             models.Flight: Newly created flight.
         """
-        endpoint: str = f"/api/v1/projects/{self.id}/flights"
+        endpoint = f"/api/v1/projects/{self.id}/flights"
 
         # if pilot id not provided, use current user's id
         if not pilot_id:
-            response: requests.Response = self.client.make_get_request(
-                "/api/v1/users/current"
-            )
+            response = self.client.make_get_request("/api/v1/users/current")
             if response.status_code == 200:
                 user = response.json()
                 pilot_id = user["id"]
@@ -67,11 +66,11 @@ class Project:
         }
 
         # post form data
-        response: requests.Response = self.client.make_post_request(endpoint, json=data)
+        response = self.client.make_post_request(endpoint, json=data)
 
         # if successful, return flight model
         if response.status_code == 201:
-            response_data = response.json()
+            response_data: Optional[schemas.Flight] = response.json()
             if response_data:
                 flight = models.Flight(
                     self.client, **schemas.Flight.from_dict(response_data).__dict__
@@ -85,13 +84,13 @@ class Project:
         """Return list of all active flights in project.
 
         Returns:
-            List[models.Flight]: List of active flights in project.
+            List[models.Flight]: List of flights.
         """
-        endpoint: str = f"/api/v1/projects/{self.id}/flights"
-        response: requests.Response = self.client.make_get_request(endpoint)
+        endpoint = f"/api/v1/projects/{self.id}/flights"
+        response = self.client.make_get_request(endpoint)
 
         if response.status_code == 200:
-            response_data: List[dict] = response.json()
+            response_data: List[schemas.Flight] = response.json()
             if len(response_data) > 0:
                 flights = [
                     models.Flight(
@@ -104,5 +103,23 @@ class Project:
         pretty_print_response(response)
         return []
 
-    def update(self):
-        pass
+    def update(self, **kwargs) -> None:
+        """Update project attributes."""
+        endpoint = f"/api/v1/projects/{self.id}"
+        response = self.client.make_put_request(
+            endpoint, json=json.loads(json.dumps(kwargs, default=str))
+        )
+
+        if response.status_code == 200:
+            response_data: Optional[schemas.Project] = response.json()
+            if response_data:
+                updated_project = schemas.Project.from_dict(response_data).__dict__
+                for key, value in updated_project.items():
+                    if hasattr(self, key):
+                        setattr(self, key, value)
+                    else:
+                        print(f"Warning: Attribute '{key}' not found in Project class.")
+                return None
+
+        pretty_print_response(response)
+        return None

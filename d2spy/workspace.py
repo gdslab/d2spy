@@ -24,6 +24,18 @@ class Workspace:
         planting_date: Union[datetime, None] = None,
         harvest_date: Union[datetime, None] = None,
     ) -> models.Project:
+        """Create new project in workspace.
+
+        Args:
+            title (str): Title for project.
+            description (str): Description of project.
+            location (dict): GeoJSON object representing location of project.
+            planting_date (Union[datetime, None], optional): Optional planting date. Defaults to None.
+            harvest_date (Union[datetime, None], optional): Optional harvest date. Defaults to None.
+
+        Returns:
+            New project instance.
+        """
         endpoint = f"/api/v1/projects"
         data = {
             "title": title,
@@ -51,7 +63,7 @@ class Workspace:
             project_id (str): Project ID.
 
         Returns:
-            Union[Project, None]: Project matching ID or None.
+            Project matching ID or None.
         """
         endpoint = f"/api/v1/projects/{project_id}"
         response = self.client.make_get_request(endpoint)
@@ -69,7 +81,7 @@ class Workspace:
         user will be returned.
 
         Returns:
-            List(Project): List of all projects viewable by user.
+            List of all projects viewable by user.
         """
         endpoint = "/api/v1/projects"
         response = self.client.make_get_request(endpoint)

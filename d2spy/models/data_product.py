@@ -9,8 +9,9 @@ class DataProduct:
 
     def __repr__(self):
         return (
-            f"DataProduct(id={self.id!r}, data_type={self.data_type!r}, "
+            f"DataProduct(data_type={self.data_type!r}, "
             f"filepath={self.filepath!r}, original_filename={self.original_filename!r}, "
-            f"is_active={self.is_active!r}, flight_id={self.flight_id!r}, "
-            f"public={self.public!r}, status={self.status!r}, url={self.url!r})"
+            f"is_active={self.is_active!r}, public={self.public!r}, "
+            f"stac_properties={self.stac_properties!r}, status={self.status!r}, "
+            f"url={self.url!r})"
         )

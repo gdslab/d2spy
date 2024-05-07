@@ -1,3 +1,4 @@
+import json
 import os
 import requests
 from datetime import date
@@ -21,14 +22,16 @@ class Flight:
 
     def __repr__(self):
         return (
-            f"Flight(id={self.id!r}, acquisition_date={self.acquisition_date!r}, "
+            f"Flight(acquisition_date={self.acquisition_date!r}, "
             f"altitude={self.altitude!r}, side_overlap={self.side_overlap!r}, "
             f"forward_overlap={self.forward_overlap!r}, sensor={self.sensor!r}, "
             f"platform={self.platform!r})"
         )
 
     def add_data_product(self, filepath: str, data_type: str):
-        """Uploads data product to D2S tusd server.
+        """Uploads data product to D2S. After the upload finishes, the data product may
+        not be available for several minutes while it is processed on the D2S server. It
+        will be returned by `Flight.get_data_products` once ready.
 
         Args:
             filepath (str): Full path to data product on local file system.
@@ -67,6 +70,11 @@ class Flight:
         print(f"{Path(filepath).name} uploaded")
 
     def get_data_products(self) -> List[models.DataProduct]:
+        """Return list of all active data products in a flight.
+
+        Returns:
+            List[models.DataProduct]: List of data products.
+        """
         endpoint = f"/api/v1/projects/{self.project_id}/flights/{self.id}/data_products"
         response = self.client.make_get_request(endpoint)
 
@@ -84,6 +92,27 @@ class Flight:
 
         pretty_print_response(response)
         return []
+
+    def update(self, **kwargs) -> None:
+        """Update flight attributes."""
+        endpoint = f"/api/v1/projects/{self.project_id}/flights/{self.id}"
+        response = self.client.make_put_request(
+            endpoint, json=json.loads(json.dumps(kwargs, default=str))
+        )
+
+        if response.status_code == 200:
+            response_data: Optional[schemas.Flight] = response.json()
+            if response_data:
+                updated_flight = schemas.Flight.from_dict(response_data).__dict__
+                for key, value in updated_flight.items():
+                    if hasattr(self, key):
+                        setattr(self, key, value)
+                    else:
+                        print(f"Warning: Attribute '{key}' not found in Flight class.")
+                return None
+
+        pretty_print_response(response)
+        return None
 
 
 def get_metadata_filetype(filepath: str) -> str:

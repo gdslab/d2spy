@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from typing import List, Union
 from uuid import UUID
 
+from d2spy.schemas.stac_properties import STACProperties
+
 
 @dataclass
 class DataProduct:
@@ -14,6 +16,7 @@ class DataProduct:
     flight_id: UUID
     deactivated_at: Union[datetime, None]
     public: bool
+    stac_properties: STACProperties
     status: str
     url: str
 
@@ -28,6 +31,7 @@ class DataProduct:
             flight_id=data["flight_id"],
             deactivated_at=data["deactivated_at"],
             public=data["public"],
+            stac_properties=data["stac_properties"],
             status=data["status"],
             url=data["url"],
         )

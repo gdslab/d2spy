@@ -9,6 +9,9 @@ nav:
   - API Reference:
       - api_client module: api_client.md
       - auth module: auth.md
+      - data_product module: data_product.md
+      - project module: project.md
+      - flight module: flight.md
       - workspace module: workspace.md
 
 extra_css:

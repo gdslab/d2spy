@@ -40,12 +40,25 @@ class APIClient:
 
         Args:
             endpoint (str): D2S endpoint for request.
-            data (dict): Data to be sent with request.
 
         Returns:
             requests.Response: Response from D2S API to request.
         """
         url = self.base_url + endpoint
         response = self.session.post(url, **kwargs)
+
+        return response
+
+    def make_put_request(self, endpoint: str, **kwargs) -> requests.Response:
+        """Make PUT request to D2S API.
+
+        Args:
+            endpoint (str): _description_
+
+        Returns:
+            requests.Response: _description_
+        """
+        url = self.base_url + endpoint
+        response = self.session.put(url, **kwargs)
 
         return response
