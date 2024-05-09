@@ -1,4 +1,12 @@
+# dependencies
 *.pyc
-**__pycache__/**
+__pycache__
+venv
+.venv
 
-dist/
+# build files
+build
+site
+
+# distribution files
+dist

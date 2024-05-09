@@ -1,11 +1,17 @@
 site_name: d2spy
 site_description: Python package for Data to Science Engine
 
-repo_name: gdslab/data-to-science
-repo_url: https://github.com/gdslab/data-to-science
+repo_name: gdslab/d2spy
+repo_url: https://github.com/gdslab/d2spy
 
 nav:
   - Home: index.md
+  - Getting Started:
+      - Welcome: welcome.md
+      - Installation: installation.md
+      - License: license.md
+  - Guides:
+      - Guides: guides.md
   - API Reference:
       - api_client module: api_client.md
       - auth module: auth.md
@@ -13,6 +19,9 @@ nav:
       - project module: project.md
       - flight module: flight.md
       - workspace module: workspace.md
+  - Outreach:
+      - Conferences: conferences.md
+      - Workshops: workshops.md
 
 extra_css:
   - stylesheets/extra.css
