@@ -1,16 +1,15 @@
 [tool.poetry]
-name = "d2spy-pkg"
+name = "d2spy"
 version = "0.0.1"
-license = "GPL-3.0-or-later"
-description = "Python package for retrieving Data to Science datasets."
+license = "MIT License"
+description = "Python package for interacting with a Data to Science instance."
 authors = ["Ben Hancock <hancocb@purdue.edu>"]
 readme = "README.md"
-keywords = ["python", "data to science", "uas", "data management"]
+keywords = ["python", "data to science", "uas"]
 classifiers = [
     "Development Status :: 3 - Alpha",
-    "Intended Audience :: Developers",
-    "Intended Audience :: Education",
-    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
