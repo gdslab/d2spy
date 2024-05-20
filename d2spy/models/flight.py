@@ -6,11 +6,10 @@ from pathlib import Path
 from typing import List
 from uuid import UUID
 
-from tusclient import client as tusc
-from tusclient.uploader import Uploader
-
 from d2spy import models, schemas
 from d2spy.api_client import APIClient
+from d2spy.extras.third_party.tusclient import client as tusc
+from d2spy.extras.third_party.tusclient.uploader import Uploader
 from d2spy.extras.utils import pretty_print_response
 
 

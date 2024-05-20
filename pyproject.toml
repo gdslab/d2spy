@@ -22,7 +22,6 @@ packages = [{include = "d2spy"}]
 [tool.poetry.dependencies]
 python = "^3.11"
 requests = "^2.31.0"
-tuspy = {git = "https://github.com/hancocb/tus-py-client.git"}
 
 
 [tool.poetry.group.test.dependencies]
