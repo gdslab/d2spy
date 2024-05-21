@@ -32,6 +32,7 @@ requests-mock = "^1.11.0"
 [tool.poetry.group.docs.dependencies]
 mkdocstrings = {extras = ["python"], version = "^0.24.3"}
 mkdocs-material = "^9.5.11"
+mkdocs-jupyter = "^0.24.7"
 
 
 [tool.poetry.group.dev.dependencies]

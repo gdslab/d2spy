@@ -4,9 +4,9 @@
 
 <p align="center">
   <img 
-    src="./docs/assets/d2s-logo.png" 
+    src="https://py.d2s.org/assets/d2s-logo.png" 
     alt="Data to Science logo"
-    height="128"
+    width="128"
   >
 </p>
 

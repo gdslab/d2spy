@@ -7,12 +7,12 @@ repo_url: https://github.com/gdslab/d2spy
 nav:
   - Home: index.md
   - Getting Started:
-      - Welcome: welcome.md
       - Installation: installation.md
       - License: license.md
   - Guides:
       - Guides: guides.md
   - API Reference:
+      - api_reference.md
       - api_client module: api_client.md
       - auth module: auth.md
       - data_product module: data_product.md
@@ -20,7 +20,7 @@ nav:
       - flight module: flight.md
       - workspace module: workspace.md
   - Outreach:
-      - Conferences: conferences.md
+      #     - Conferences: conferences.md
       - Workshops: workshops.md
 
 extra_css:
@@ -56,6 +56,10 @@ theme:
 plugins:
   - search
   - mkdocstrings
+  - mkdocs-jupyter:
+      include_source: true
+      execute: false
+      allow_errors: false
 
 markdown_extensions:
   - admonition
