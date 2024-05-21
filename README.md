@@ -1,9 +1,26 @@
-# Building with poetry
+# Welcome to Data to Science Python (d2spy)
 
-Run the following from the root directory to build the source and wheels archives: `poetry build`
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-This will create a `dist` directory containing a `.tar.gz` archive of the source code and a `.whl` file.
+<p align="center">
+  <img 
+    src="./docs/assets/d2s-logo.png" 
+    alt="Data to Science logo"
+    height="128"
+  >
+</p>
 
-# Installing d2spy package with pip
+D2spy is a Python package for interacting with Data to Science instances.
 
-The d2spy package can be installed with pip using the `.whl` in the build's `dist` directory. Inside a Python virtual environment, run `python -m pip install d2spy_pkg-VERSION-py3-none-any.whl` to install d2spy.
+## Features
+
+- Sign in to your Data to Science instance
+- Access your projects, flights, and data products
+- Create new projects and flights
+- Upload data products to flights
+
+## Documentation
+
+- [Homepage](https://py.d2s.org/)
+- [Guides](https://py.d2s.org/guides)
+- [API Reference](https://py.d2s.org/api_client/)
