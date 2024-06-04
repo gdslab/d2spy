@@ -1,6 +1,6 @@
 from datetime import date, datetime
 from dataclasses import dataclass
-from typing import List, Union
+from typing import List, Optional
 from uuid import UUID
 
 from d2spy.schemas.data_product import DataProduct
@@ -16,7 +16,7 @@ class Flight:
     sensor: str
     platform: str
     is_active: bool
-    deactivated_at: Union[datetime, None]
+    deactivated_at: Optional[datetime]
     project_id: UUID
     pilot_id: UUID
     data_products: List[DataProduct]

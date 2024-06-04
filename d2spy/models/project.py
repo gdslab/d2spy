@@ -29,7 +29,7 @@ class Project:
         forward_overlap: float,
         sensor: str,
         platform: str,
-        pilot_id: UUID | None = None,
+        pilot_id: Optional[UUID] = None,
     ) -> models.Flight:
         """Create new flight in a project.
 
@@ -40,7 +40,7 @@ class Project:
             forward_overlap (float): Flight forward overlap %.
             sensor (str): Sensor used for collecting data on flight.
             platform (str): Platform used for flight.
-            pilot_id (UUID | None, optional): ID of the flight's pilot. Defaults to None.
+            pilot_id (Optional[UUID]): ID of the flight's pilot. Defaults to None.
 
         Returns:
             models.Flight: Newly created flight.

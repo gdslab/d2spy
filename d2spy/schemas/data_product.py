@@ -1,6 +1,6 @@
 from datetime import date, datetime
 from dataclasses import dataclass
-from typing import List, Union
+from typing import List, Optional
 from uuid import UUID
 
 from d2spy.schemas.stac_properties import STACProperties
@@ -14,7 +14,7 @@ class DataProduct:
     original_filename: str
     is_active: bool
     flight_id: UUID
-    deactivated_at: Union[datetime, None]
+    deactivated_at: Optional[datetime]
     public: bool
     stac_properties: STACProperties
     status: str

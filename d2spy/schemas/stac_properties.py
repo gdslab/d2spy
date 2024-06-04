@@ -1,4 +1,4 @@
-from typing import NotRequired, TypedDict
+from typing import Union, TypedDict
 
 
 class Stats(TypedDict):
@@ -8,11 +8,14 @@ class Stats(TypedDict):
     stddev: float
 
 
-class STACRasterProperties(TypedDict):
+class _STACRasterProperties(TypedDict):
     data_type: str
     stats: Stats
-    nodata: NotRequired[int | float | None]
-    unit: NotRequired[str | None]
+
+
+class STACRasterProperties(_STACRasterProperties, total=False):
+    nodata: Union[int, float]
+    unit: str
 
 
 class STACEOProperties(TypedDict):

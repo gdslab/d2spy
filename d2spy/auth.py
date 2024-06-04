@@ -1,11 +1,11 @@
 import getpass
 import json
 import requests
-from typing import Dict, Union
+from typing import Dict, Optional, Tuple
 from urllib.parse import urlparse
 
-from .extras.utils import pretty_print_response
-from .models.user import User
+from d2spy.extras.utils import pretty_print_response
+from d2spy.models.user import User
 
 
 class Auth:
@@ -27,14 +27,14 @@ class Auth:
 
         self.session: requests.Session = requests.session()
 
-    def login(self, email: str) -> Union[User, None]:
+    def login(self, email: str) -> Tuple[requests.session, Optional[User]]:
         """Login to D2S platform with email and password.
 
         Args:
             email (str): Email address used to sign in to D2S.
 
         Returns:
-            Union[User, None]: User object or None.
+            Optional[requests.session]: Session with user access cookie.
         """
         # Request password from user
         password = getpass.getpass(prompt="Enter your D2S password:")
@@ -54,7 +54,7 @@ class Auth:
             user = self.get_current_user()
             # Return dictionary of user attributes and values
             if user:
-                return User.from_dict(user)
+                return self.session
             else:
                 return None
         else:
@@ -69,11 +69,11 @@ class Auth:
         self.session.close()
         print("session ended")
 
-    def get_current_user(self) -> Union[User, None]:
+    def get_current_user(self) -> Optional[User]:
         """Get user object for logged in user.
 
         Returns:
-            Union[User, None]: User object or None.
+            Optional[User]: User object or None.
         """
         # D2S endpoint for fetching user object for signed in user
         url = f"{self.base_url}/api/v1/users/current"
@@ -97,7 +97,7 @@ def test_base_url(base_url: str) -> bool:
     Returns:
         bool: Returns True if D2S instance returns status OK, otherwise False
     """
-    response: Union[requests.Response, None] = None
+    response: Optional[requests.Response] = None
     try:
         response = requests.get(base_url)
     except requests.exceptions.ConnectionError:

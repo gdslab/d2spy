@@ -1,6 +1,6 @@
 from datetime import date, datetime
 from dataclasses import dataclass
-from typing import Union
+from typing import Optional
 from uuid import UUID
 
 from d2spy.schemas.geojson import GeoJSON
@@ -11,12 +11,12 @@ class Project:
     id: UUID
     title: str
     description: str
-    planting_date: Union[date, None]
-    harvest_date: Union[date, None]
+    planting_date: Optional[date]
+    harvest_date: Optional[date]
     is_active: bool
     location_id: UUID
     team_id: UUID
-    deactivated_at: Union[datetime, None]
+    deactivated_at: Optional[datetime]
     owner_id: UUID
     is_owner: bool
     field: GeoJSON

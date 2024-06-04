@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Union
+from typing import Optional
 from uuid import UUID
 
 
@@ -11,7 +11,7 @@ class User:
     last_name: str
     is_email_confirmed: bool
     is_approved: bool
-    profile_url: Union[str, None]
+    profile_url: Optional[str]
 
     @classmethod
     def from_dict(cls, data: dict) -> "User":

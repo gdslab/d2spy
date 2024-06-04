@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "d2spy"
-version = "0.0.2"
+version = "0.0.3"
 license = "MIT License"
 description = "Python package for interacting with a Data to Science instance."
 authors = ["Ben Hancock <hancocb@purdue.edu>"]
@@ -12,15 +12,15 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
 ]
 packages = [{include = "d2spy"}]
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.9"
 requests = "^2.31.0"
 
 

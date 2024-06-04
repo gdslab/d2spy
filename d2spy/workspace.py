@@ -1,6 +1,6 @@
 import requests
 from datetime import datetime
-from typing import List, Union
+from typing import List, Optional
 
 from d2spy import models, schemas
 from d2spy.api_client import APIClient
@@ -21,8 +21,8 @@ class Workspace:
         title: str,
         description: str,
         location: dict,
-        planting_date: Union[datetime, None] = None,
-        harvest_date: Union[datetime, None] = None,
+        planting_date: Optional[datetime] = None,
+        harvest_date: Optional[datetime] = None,
     ) -> models.Project:
         """Create new project in workspace.
 
@@ -30,11 +30,11 @@ class Workspace:
             title (str): Title for project.
             description (str): Description of project.
             location (dict): GeoJSON object representing location of project.
-            planting_date (Union[datetime, None], optional): Optional planting date. Defaults to None.
-            harvest_date (Union[datetime, None], optional): Optional harvest date. Defaults to None.
+            planting_date (Optional[datetime]): Optional planting date. Defaults to None.
+            harvest_date (Optional[datetime]): Optional harvest date. Defaults to None.
 
         Returns:
-            New project instance.
+            models.Project: New project instance.
         """
         endpoint = f"/api/v1/projects"
         data = {
@@ -56,14 +56,14 @@ class Workspace:
         pretty_print_response(response)
         return None
 
-    def get_project(self, project_id: str) -> Union[models.Project, None]:
+    def get_project(self, project_id: str) -> Optional[models.Project]:
         """Request single project by ID. Project must be active and viewable by user.
 
         Args:
             project_id (str): Project ID.
 
         Returns:
-            Project matching ID or None.
+            Optional[models.Project]: Project matching ID or None.
         """
         endpoint = f"/api/v1/projects/{project_id}"
         response = self.client.make_get_request(endpoint)
@@ -81,7 +81,7 @@ class Workspace:
         user will be returned.
 
         Returns:
-            List of all projects viewable by user.
+            List[models.Project]: List of all projects viewable by user.
         """
         endpoint = "/api/v1/projects"
         response = self.client.make_get_request(endpoint)

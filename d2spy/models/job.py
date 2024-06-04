@@ -1,6 +1,6 @@
 from datetime import datetime
 from dataclasses import dataclass
-from typing import Callable, Union
+from typing import Callable, Optional
 from uuid import UUID
 
 
@@ -11,9 +11,9 @@ class Job:
     state: str
     status: str
     start_time: datetime
-    end_time: Union[datetime, None]
-    data_product_id: Union[UUID, None]
-    raw_data_id: Union[UUID, None]
+    end_time: Optional[datetime]
+    data_product_id: Optional[UUID]
+    raw_data_id: Optional[UUID]
     check_status: Callable[[], str]
 
     @classmethod
