@@ -3,7 +3,7 @@ import os
 import requests
 from datetime import date
 from pathlib import Path
-from typing import List
+from typing import List, Literal, Union
 from uuid import UUID
 
 from d2spy import models, schemas
@@ -27,15 +27,20 @@ class Flight:
             f"platform={self.platform!r})"
         )
 
-    def add_data_product(self, filepath: str, data_type: str):
+    def add_data_product(
+        self,
+        filepath: str,
+        data_type: Union[Literal["dsm", "point_cloud", "ortho"], str],
+    ):
         """Uploads data product to D2S. After the upload finishes, the data product may
         not be available for several minutes while it is processed on the D2S server. It
         will be returned by `Flight.get_data_products` once ready.
 
         Args:
             filepath (str): Full path to data product on local file system.
-            data_type (str): Data product's data type (e.g., ortho, dsm, etc.)
+            data_type (Union[Literal["dsm", "point_cloud", "ortho"], str]): Data product's data type.
         """
+        verify_file_exists(filepath)
         validate_file_extension_and_data_type(filepath, data_type)
         # url for tusd server
         endpoint = f"{self.client.base_url}/files"
@@ -163,3 +168,16 @@ def validate_file_extension_and_data_type(filepath: str, data_type: str) -> None
 
     if ext != ".tif" and ext != ".las" and ext != ".laz":
         raise ValueError("Unrecognized file extension for data product")
+
+
+def verify_file_exists(filepath: str) -> None:
+    """Check if a file exists at the provided filepath.
+
+    Args:
+        filepath (str): Full path to data product.
+
+    Raises:
+        FileNotFoundError: Raised if file does not exist at filepath.
+    """
+    if not os.path.exists(filepath):
+        raise FileNotFoundError("Cannot find data product at provided path.")

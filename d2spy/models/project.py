@@ -1,7 +1,8 @@
+from datetime import date, datetime
 import json
 import requests
 from datetime import date
-from typing import List, Optional
+from typing import List, Literal, Optional, Union
 from uuid import UUID
 
 from d2spy import models, schemas
@@ -27,8 +28,8 @@ class Project:
         altitude: float,
         side_overlap: float,
         forward_overlap: float,
-        sensor: str,
-        platform: str,
+        sensor: Literal["RGB", "Multispectral", "LiDAR", "Other"],
+        platform: Union[Literal["Phantom_4", "M300", "M350", "Other"], str],
         pilot_id: Optional[UUID] = None,
     ) -> models.Flight:
         """Create new flight in a project.
@@ -38,8 +39,8 @@ class Project:
             altitude (float): Flight altitude.
             side_overlap (float): Flight side overlap %.
             forward_overlap (float): Flight forward overlap %.
-            sensor (str): Sensor used for collecting data on flight.
-            platform (str): Platform used for flight.
+            sensor (Literal["RGB", "Multispectral", "LiDAR", "Other"]): Sensor used for collecting data on flight.
+            platform (Union[Literal["Phantom_4", "M300", "M350"], str]): Platform used for flight.
             pilot_id (Optional[UUID]): ID of the flight's pilot. Defaults to None.
 
         Returns:
@@ -53,6 +54,10 @@ class Project:
             if response.status_code == 200:
                 user = response.json()
                 pilot_id = user["id"]
+
+        # Check if we need to serialize the acquisition date
+        if isinstance(acquisition_date, date):
+            acquisition_date = acquisition_date.strftime("%Y-%m-%d")
 
         # form data for flight creation
         data = {
