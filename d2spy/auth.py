@@ -27,17 +27,21 @@ class Auth:
 
         self.session: requests.Session = requests.session()
 
-    def login(self, email: str) -> Tuple[requests.session, Optional[User]]:
+    def login(
+        self, email: str, password: Optional[str]
+    ) -> Tuple[requests.session, Optional[User]]:
         """Login to D2S platform with email and password.
 
         Args:
             email (str): Email address used to sign in to D2S.
+            password Optional[str]: Password used to sign in to D2S.
 
         Returns:
             Optional[requests.session]: Session with user access cookie.
         """
-        # Request password from user
-        password = getpass.getpass(prompt="Enter your D2S password:")
+        # Request password from user if not provided to login method
+        if not password:
+            password = getpass.getpass(prompt="Enter your D2S password:")
         # Credentials that will be sent to D2S auth API
         credentials = {"username": email, "password": password}
         # URL for D2S access-token endpoint

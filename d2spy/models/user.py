@@ -12,6 +12,7 @@ class User:
     is_email_confirmed: bool
     is_approved: bool
     profile_url: Optional[str]
+    api_access_token: Optional[str]
 
     @classmethod
     def from_dict(cls, data: dict) -> "User":
@@ -23,4 +24,5 @@ class User:
             is_email_confirmed=data["is_email_confirmed"],
             is_approved=data["is_approved"],
             profile_url=data["profile_url"],
+            api_access_token=data["api_access_token"],
         )
