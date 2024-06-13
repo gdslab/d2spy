@@ -27,9 +27,7 @@ class Auth:
 
         self.session: requests.Session = requests.session()
 
-    def login(
-        self, email: str, password: Optional[str]
-    ) -> Tuple[requests.session, Optional[User]]:
+    def login(self, email: str, password: Optional[str] = None) -> requests.session:
         """Login to D2S platform with email and password.
 
         Args:

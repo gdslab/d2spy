@@ -85,6 +85,26 @@ class Project:
         pretty_print_response(response)
         return None
 
+    def get_flight(self, flight_id: str) -> Optional[models.Flight]:
+        """Request single flight by ID. Flight must be active and viewable by user.
+
+        Args:
+            flight_id (str): Flight ID.
+
+        Returns:
+            Optional[models.Flight]: Flight matching ID or None.
+        """
+        endpoint = f"/api/v1/projects/{self.id}/flights/{flight_id}"
+        response = self.client.make_get_request(endpoint)
+
+        if response.status_code == 200:
+            response_data: schemas.Flight = response.json()
+            if response_data:
+                flight = schemas.Flight.from_dict(response_data)
+                return models.Flight(self.client, **flight.__dict__)
+
+        return None
+
     def get_flights(self) -> List[models.Flight]:
         """Return list of all active flights in project.
 
