@@ -105,14 +105,19 @@ class Project:
 
         return None
 
-    def get_flights(self) -> List[models.Flight]:
+    def get_flights(self, has_raster: Optional[bool] = False) -> List[models.Flight]:
         """Return list of all active flights in project.
+
+        Args:
+            has_raster (Optional[bool], optional): Only return flights with active raster data products. Excludes non-raster data products. Defaults to False.
 
         Returns:
             List[models.Flight]: List of flights.
         """
         endpoint = f"/api/v1/projects/{self.id}/flights"
-        response = self.client.make_get_request(endpoint)
+        response = self.client.make_get_request(
+            endpoint, params={"has_raster": has_raster}
+        )
 
         if response.status_code == 200:
             response_data: List[schemas.Flight] = response.json()

@@ -21,7 +21,7 @@ class APIClient:
         if not self.session.cookies.get("access_token"):
             raise ValueError("Session missing access token. Must sign in first.")
 
-    def make_get_request(self, endpoint: str) -> requests.Response:
+    def make_get_request(self, endpoint: str, **kwargs) -> requests.Response:
         """Makes GET request to D2S API.
 
         Args:
@@ -31,7 +31,7 @@ class APIClient:
             requests.Response: Response from D2S API to request.
         """
         url = self.base_url + endpoint
-        response = self.session.get(url)
+        response = self.session.get(url, **kwargs)
 
         return response
 

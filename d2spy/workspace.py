@@ -76,15 +76,20 @@ class Workspace:
 
         return None
 
-    def get_projects(self) -> List[models.Project]:
+    def get_projects(self, has_raster: Optional[bool] = False) -> List[models.Project]:
         """Request multiple projects. Only active projects viewable by
         user will be returned.
+
+        Args:
+            has_raster (Optional[bool], optional): Only return projects with flights that have active raster data products. Excludes non-raster data products. Defaults to False.
 
         Returns:
             List[models.Project]: List of all projects viewable by user.
         """
         endpoint = "/api/v1/projects"
-        response = self.client.make_get_request(endpoint)
+        response = self.client.make_get_request(
+            endpoint, params={"has_raster": has_raster}
+        )
 
         if response.status_code == 200:
             response_data: List[dict] = response.json()
