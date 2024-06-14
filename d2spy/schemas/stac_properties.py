@@ -1,4 +1,4 @@
-from typing import Union, TypedDict
+from typing import List, Union, TypedDict
 
 
 class Stats(TypedDict):
@@ -24,5 +24,5 @@ class STACEOProperties(TypedDict):
 
 
 class STACProperties(TypedDict):
-    raster: list[STACRasterProperties]
-    eo: list[STACEOProperties]
+    raster: List[STACRasterProperties]
+    eo: List[STACEOProperties]
