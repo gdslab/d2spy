@@ -9,6 +9,7 @@ from d2spy.schemas.data_product import DataProduct
 @dataclass
 class Flight:
     id: UUID
+    name: Optional[str]
     acquisition_date: date
     altitude: float
     side_overlap: float
@@ -25,6 +26,7 @@ class Flight:
     def from_dict(cls, data: dict) -> "Flight":
         return cls(
             id=data["id"],
+            name=data["name"],
             acquisition_date=data["acquisition_date"],
             altitude=data["altitude"],
             side_overlap=data["side_overlap"],

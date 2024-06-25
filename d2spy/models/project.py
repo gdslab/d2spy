@@ -30,11 +30,13 @@ class Project:
         forward_overlap: float,
         sensor: Literal["RGB", "Multispectral", "LiDAR", "Other"],
         platform: Union[Literal["Phantom_4", "M300", "M350", "Other"], str],
+        name: Optional[str] = None,
         pilot_id: Optional[UUID] = None,
     ) -> models.Flight:
         """Create new flight in a project.
 
         Args:
+            name (Optional[str]): Name of flight.
             acquisition_date (date): Date of flight.
             altitude (float): Flight altitude.
             side_overlap (float): Flight side overlap %.
@@ -61,6 +63,7 @@ class Project:
 
         # form data for flight creation
         data = {
+            "name": name,
             "acquisition_date": acquisition_date,
             "altitude": altitude,
             "side_overlap": side_overlap,

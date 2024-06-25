@@ -21,7 +21,7 @@ class Flight:
 
     def __repr__(self):
         return (
-            f"Flight(acquisition_date={self.acquisition_date!r}, "
+            f"Flight(acquisition_date={self.acquisition_date!r}, name={self.name!r}, "
             f"altitude={self.altitude!r}, side_overlap={self.side_overlap!r}, "
             f"forward_overlap={self.forward_overlap!r}, sensor={self.sensor!r}, "
             f"platform={self.platform!r})"
