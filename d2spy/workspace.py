@@ -96,7 +96,7 @@ class Workspace:
             if len(response_data) > 0:
                 projects = [
                     models.Project(
-                        self.client, **schemas.Project.from_dict(project).__dict__
+                        self.client, **schemas.MultiProject.from_dict(project).__dict__
                     )
                     for project in response_data
                 ]
