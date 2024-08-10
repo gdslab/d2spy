@@ -8,6 +8,7 @@ from uuid import UUID
 from d2spy import models, schemas
 from d2spy.api_client import APIClient
 from d2spy.extras.utils import pretty_print_response
+from d2spy.schemas.geojson import GeoJSON
 
 
 class Project:
@@ -19,7 +20,7 @@ class Project:
     def __repr__(self):
         return (
             f"Project(title={self.title!r}, description={self.description!r}, "
-            f"planting_date={self.planting_date!r}, harvest_date={self.harvest_date!r})"
+            f"centroid={self.centroid!r})"
         )
 
     def add_flight(
@@ -135,6 +136,23 @@ class Project:
 
         pretty_print_response(response)
         return []
+
+    def get_project_boundary(self) -> Optional[GeoJSON]:
+        """Return project boundary in GeoJSON format.
+
+        Returns:
+            GeoJSON: Project boundary in GeoJSON format.
+        """
+        endpoint = f"/api/v1/projects/{self.id}"
+        response = self.client.make_get_request(endpoint)
+
+        if response.status_code == 200:
+            response_data: Union[dict, None] = response.json()
+            if response_data:
+                project = schemas.Project.from_dict(response_data)
+                return project.field
+
+        return None
 
     def update(self, **kwargs) -> None:
         """Update project attributes."""

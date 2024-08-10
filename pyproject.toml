@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "d2spy"
-version = "0.0.12"
+version = "0.0.13"
 license = "MIT License"
 description = "Python package for interacting with a Data to Science instance."
 authors = ["Ben Hancock <hancocb@purdue.edu>"]
@@ -18,7 +18,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
 ]
-packages = [{include = "d2spy"}]
+packages = [{ include = "d2spy" }]
 
 [tool.poetry.dependencies]
 python = "^3.8"
@@ -31,7 +31,7 @@ requests-mock = "^1.11.0"
 
 
 [tool.poetry.group.docs.dependencies]
-mkdocstrings = {extras = ["python"], version = "^0.24.3"}
+mkdocstrings = { extras = ["python"], version = "^0.24.3" }
 mkdocs-material = "^9.5.11"
 mkdocs-jupyter = "^0.24.7"
 
