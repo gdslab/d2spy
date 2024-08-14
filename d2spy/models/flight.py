@@ -97,6 +97,30 @@ class Flight:
         pretty_print_response(response)
         return []
 
+    def move_to_project(self, destination_project_id: UUID) -> None:
+        """Moves flight from its current project to different project. You must be an
+        owner of both the source project and destination project to make the transfer.
+
+        Args:
+            destination_project_id (UUID): ID of project the flight will be moved to.
+        """
+        endpoint = f"/api/v1/projects/{self.project_id}/flights/{self.id}/move_to_project/{destination_project_id}"
+        response = self.client.make_put_request(endpoint)
+
+        if response.status_code == 200:
+            response_data: schemas.Flight = response.json()
+            if response_data:
+                updated_flight = schemas.Flight.from_dict(response_data).__dict__
+                for key, value in updated_flight.items():
+                    if hasattr(self, key):
+                        setattr(self, key, value)
+                    else:
+                        print(f"Warning: Attribute '{key}' not found in Flight class.")
+                return None
+
+        pretty_print_response(response)
+        return None
+
     def update(self, **kwargs) -> None:
         """Update flight attributes."""
         endpoint = f"/api/v1/projects/{self.project_id}/flights/{self.id}"
