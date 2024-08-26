@@ -1,5 +1,45 @@
 from datetime import date, datetime, timedelta
 
+# Example data product response from API
+TEST_DATA_PRODUCT = {
+    "data_type": "dsm",
+    "filepath": "/some/filepath/dsm.tif",
+    "original_filename": "dsm.tif",
+    "stac_properties": {
+        "raster": [
+            {
+                "data_type": "float32",
+                "stats": {
+                    "minimum": 187.849,
+                    "maximum": 188.088,
+                    "mean": 187.959,
+                    "stddev": 0.038,
+                },
+                "nodata": None,
+            }
+        ],
+        "eo": [{"name": "b1", "description": "Gray"}],
+    },
+    "is_active": True,
+    "is_initial_processing_completed": True,
+    "id": "2c2d5ce4-5611-4108-9f66-83ca51f5f52b",
+    "flight_id": "b4eb23cc-3d36-4586-b11c-a0a95b00d245",
+    "user_style": {
+        "max": 188.088,
+        "min": 187.849,
+        "mode": "minMax",
+        "userMax": 188.088,
+        "userMin": 187.849,
+        "colorRamp": "rainbow",
+        "meanStdDev": 2,
+    },
+    "deactivated_at": None,
+    "public": False,
+    "status": "SUCCESS",
+    "url": "https://example.com/some/filepath/dsm.tif",
+}
+
+
 # Example flight response from API
 TEST_FLIGHT = {
     "acquisition_date": str(date.today()),

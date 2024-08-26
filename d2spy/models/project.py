@@ -8,6 +8,7 @@ from uuid import UUID
 from d2spy import models, schemas
 from d2spy.api_client import APIClient
 from d2spy.extras.utils import pretty_print_response
+from d2spy.models.flight_collection import FlightCollection
 from d2spy.schemas.geojson import GeoJSON
 
 
@@ -111,7 +112,7 @@ class Project:
             models.Flight(self.client, **schemas.Flight.from_dict(flight).__dict__)
             for flight in response_data
         ]
-        return flights
+        return FlightCollection(collection=flights)
 
     def get_project_boundary(self) -> Optional[GeoJSON]:
         """Return project boundary in GeoJSON format.

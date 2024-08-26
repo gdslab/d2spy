@@ -9,6 +9,7 @@ from requests import Session
 
 from d2spy.api_client import APIClient
 from d2spy.models.data_product import DataProduct
+from d2spy.models.data_product_collection import DataProductCollection
 from d2spy.models.flight import Flight
 from d2spy.models.project import Project
 from d2spy.models.raw_data import RawData
@@ -196,8 +197,8 @@ class TestFlight(TestCase):
             f"/api/v1/projects/{project_id}/flights/{flight_id}/data_products"
         )
 
-        # Assert that the response data was a list of five data products
-        self.assertIsInstance(data_products, List)
+        # Assert that the response data was a collection of five data products
+        self.assertIsInstance(data_products, DataProductCollection)
         self.assertEqual(len(data_products), 5)
         # Assert that the response data product matches the original data product
         for data_product in data_products:

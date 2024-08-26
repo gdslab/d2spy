@@ -7,6 +7,7 @@ from requests import Session
 
 from d2spy.api_client import APIClient
 from d2spy.models.flight import Flight
+from d2spy.models.flight_collection import FlightCollection
 from d2spy.models.project import Project
 from d2spy.workspace import Workspace
 
@@ -249,8 +250,8 @@ class TestProject(TestCase):
             f"/api/v1/projects/{project_id}/flights", params={"has_raster": False}
         )
 
-        # Assert that the response data was a list of five flight objects
-        self.assertIsInstance(flights, List)
+        # Assert that the response data was a collection of five flight objects
+        self.assertIsInstance(flights, FlightCollection)
         self.assertEqual(len(flights), 5)
         # Assert that the response flight data matches the test flight data
         for flight in flights:

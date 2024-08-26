@@ -8,6 +8,7 @@ from uuid import UUID
 
 from d2spy import models, schemas
 from d2spy.api_client import APIClient
+from d2spy.models.data_product_collection import DataProductCollection
 from d2spy.extras.third_party.tusclient import client as tusc
 from d2spy.extras.third_party.tusclient.uploader import Uploader
 from d2spy.extras.utils import pretty_print_response
@@ -114,7 +115,7 @@ class Flight:
 
         print(f"{Path(filepath).name} uploaded")
 
-    def get_data_products(self) -> List[models.DataProduct]:
+    def get_data_products(self) -> DataProductCollection:
         """Return list of all active data products in a flight.
 
         Returns:
@@ -130,7 +131,7 @@ class Flight:
             )
             for data_product in response_data
         ]
-        return data_products
+        return DataProductCollection(collection=data_products)
 
     def get_raw_data(self) -> List[models.RawData]:
         """Return list of all active raw data in a flight.

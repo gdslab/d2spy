@@ -6,6 +6,7 @@ from unittest.mock import patch, Mock
 from requests import Session
 
 from d2spy.models.project import Project
+from d2spy.models.project_collection import ProjectCollection
 from d2spy.workspace import Workspace
 from example_data import TEST_PROJECT
 
@@ -189,8 +190,8 @@ class TestWorkspace(TestCase):
             f"/api/v1/projects", params={"has_raster": False}
         )
 
-        # Assert that the response data was a list of five project objects
-        self.assertIsInstance(projects, List)
+        # Assert that the response data was a collection of five project objects
+        self.assertIsInstance(projects, ProjectCollection)
         self.assertEqual(len(projects), 5)
         # Assert that the response project data matches the test project data
         for project in projects:

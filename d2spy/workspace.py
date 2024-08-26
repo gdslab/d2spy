@@ -5,6 +5,7 @@ from typing import List, Optional
 from d2spy import models, schemas
 from d2spy.api_client import APIClient
 from d2spy.extras.utils import pretty_print_response
+from d2spy.models.project_collection import ProjectCollection
 
 
 class Workspace:
@@ -85,4 +86,4 @@ class Workspace:
             )
             for project in response_data
         ]
-        return projects
+        return ProjectCollection(collection=projects)

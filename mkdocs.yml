@@ -15,8 +15,11 @@ nav:
       - api_reference.md
       - api_client module: api_client.md
       - auth module: auth.md
-      - project module: project.md
+      - data_product_collection module: data_product_collection.md
       - flight module: flight.md
+      - flight_collection module: flight_collection.md
+      - project module: project.md
+      - project_collection module: project_collection.md
       - workspace module: workspace.md
   - Outreach:
       #     - Conferences: conferences.md
