@@ -45,16 +45,9 @@ class Workspace:
             "harvest_date": harvest_date,
         }
 
-        response = self.client.make_post_request(endpoint, json=data)
-
-        if response.status_code == 201:
-            response_data = response.json()
-            if response_data:
-                project = schemas.Project.from_dict(response_data)
-                return models.Project(self.client, **project.__dict__)
-
-        pretty_print_response(response)
-        return None
+        response_data = self.client.make_post_request(endpoint, json=data)
+        project = schemas.Project.from_dict(response_data)
+        return models.Project(self.client, **project.__dict__)
 
     def get_project(self, project_id: str) -> Optional[models.Project]:
         """Request single project by ID. Project must be active and viewable by user.
@@ -66,15 +59,10 @@ class Workspace:
             Optional[models.Project]: Project matching ID or None.
         """
         endpoint = f"/api/v1/projects/{project_id}"
-        response = self.client.make_get_request(endpoint)
+        response_data = self.client.make_get_request(endpoint)
+        project = schemas.Project.from_dict(response_data)
 
-        if response.status_code == 200:
-            response_data: Union[dict, None] = response.json()
-            if response_data:
-                project = schemas.Project.from_dict(response_data)
-                return models.Project(self.client, **project.__dict__)
-
-        return None
+        return models.Project(self.client, **project.__dict__)
 
     def get_projects(self, has_raster: Optional[bool] = False) -> List[models.Project]:
         """Request multiple projects. Only active projects viewable by
@@ -87,20 +75,14 @@ class Workspace:
             List[models.Project]: List of all projects viewable by user.
         """
         endpoint = "/api/v1/projects"
-        response = self.client.make_get_request(
+        response_data = self.client.make_get_request(
             endpoint, params={"has_raster": has_raster}
         )
 
-        if response.status_code == 200:
-            response_data: List[dict] = response.json()
-            if len(response_data) > 0:
-                projects = [
-                    models.Project(
-                        self.client, **schemas.MultiProject.from_dict(project).__dict__
-                    )
-                    for project in response_data
-                ]
-                return projects
-
-        pretty_print_response(response)
-        return []
+        projects = [
+            models.Project(
+                self.client, **schemas.MultiProject.from_dict(project).__dict__
+            )
+            for project in response_data
+        ]
+        return projects

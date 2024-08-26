@@ -18,10 +18,7 @@ class Project:
         self.__dict__.update(kwargs)
 
     def __repr__(self):
-        return (
-            f"Project(title={self.title!r}, description={self.description!r}, "
-            f"centroid={self.centroid!r})"
-        )
+        return f"Project(title={self.title!r}, description={self.description!r})"
 
     def add_flight(
         self,
@@ -53,10 +50,8 @@ class Project:
 
         # if pilot id not provided, use current user's id
         if not pilot_id:
-            response = self.client.make_get_request("/api/v1/users/current")
-            if response.status_code == 200:
-                user = response.json()
-                pilot_id = user["id"]
+            user = self.client.make_get_request("/api/v1/users/current")
+            pilot_id = user["id"]
 
         # Check if we need to serialize the acquisition date
         if isinstance(acquisition_date, date):
@@ -75,19 +70,13 @@ class Project:
         }
 
         # post form data
-        response = self.client.make_post_request(endpoint, json=data)
+        response_data = self.client.make_post_request(endpoint, json=data)
 
-        # if successful, return flight model
-        if response.status_code == 201:
-            response_data: Optional[schemas.Flight] = response.json()
-            if response_data:
-                flight = models.Flight(
-                    self.client, **schemas.Flight.from_dict(response_data).__dict__
-                )
-                return flight
-
-        pretty_print_response(response)
-        return None
+        # return flight model
+        flight = models.Flight(
+            self.client, **schemas.Flight.from_dict(response_data).__dict__
+        )
+        return flight
 
     def get_flight(self, flight_id: str) -> Optional[models.Flight]:
         """Request single flight by ID. Flight must be active and viewable by user.
@@ -99,15 +88,10 @@ class Project:
             Optional[models.Flight]: Flight matching ID or None.
         """
         endpoint = f"/api/v1/projects/{self.id}/flights/{flight_id}"
-        response = self.client.make_get_request(endpoint)
+        response_data = self.client.make_get_request(endpoint)
 
-        if response.status_code == 200:
-            response_data: schemas.Flight = response.json()
-            if response_data:
-                flight = schemas.Flight.from_dict(response_data)
-                return models.Flight(self.client, **flight.__dict__)
-
-        return None
+        flight = schemas.Flight.from_dict(response_data)
+        return models.Flight(self.client, **flight.__dict__)
 
     def get_flights(self, has_raster: Optional[bool] = False) -> List[models.Flight]:
         """Return list of all active flights in project.
@@ -119,23 +103,15 @@ class Project:
             List[models.Flight]: List of flights.
         """
         endpoint = f"/api/v1/projects/{self.id}/flights"
-        response = self.client.make_get_request(
+        response_data = self.client.make_get_request(
             endpoint, params={"has_raster": has_raster}
         )
 
-        if response.status_code == 200:
-            response_data: List[schemas.Flight] = response.json()
-            if len(response_data) > 0:
-                flights = [
-                    models.Flight(
-                        self.client, **schemas.Flight.from_dict(flight).__dict__
-                    )
-                    for flight in response_data
-                ]
-                return flights
-
-        pretty_print_response(response)
-        return []
+        flights = [
+            models.Flight(self.client, **schemas.Flight.from_dict(flight).__dict__)
+            for flight in response_data
+        ]
+        return flights
 
     def get_project_boundary(self) -> Optional[GeoJSON]:
         """Return project boundary in GeoJSON format.
@@ -143,34 +119,26 @@ class Project:
         Returns:
             GeoJSON: Project boundary in GeoJSON format.
         """
+        if hasattr(self, "field"):
+            return self.field
+
         endpoint = f"/api/v1/projects/{self.id}"
-        response = self.client.make_get_request(endpoint)
+        response_data = self.client.make_get_request(endpoint)
 
-        if response.status_code == 200:
-            response_data: Union[dict, None] = response.json()
-            if response_data:
-                project = schemas.Project.from_dict(response_data)
-                return project.field
-
-        return None
+        project = schemas.Project.from_dict(response_data)
+        return project.field
 
     def update(self, **kwargs) -> None:
         """Update project attributes."""
         endpoint = f"/api/v1/projects/{self.id}"
-        response = self.client.make_put_request(
+        response_data = self.client.make_put_request(
             endpoint, json=json.loads(json.dumps(kwargs, default=str))
         )
 
-        if response.status_code == 200:
-            response_data: Optional[schemas.Project] = response.json()
-            if response_data:
-                updated_project = schemas.Project.from_dict(response_data).__dict__
-                for key, value in updated_project.items():
-                    if hasattr(self, key):
-                        setattr(self, key, value)
-                    else:
-                        print(f"Warning: Attribute '{key}' not found in Project class.")
-                return None
-
-        pretty_print_response(response)
+        updated_project = schemas.Project.from_dict(response_data).__dict__
+        for key, value in updated_project.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+            else:
+                print(f"Warning: Attribute '{key}' not found in Project class.")
         return None

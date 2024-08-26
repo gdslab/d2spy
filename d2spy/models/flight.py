@@ -31,7 +31,7 @@ class Flight:
         self,
         filepath: str,
         data_type: Union[Literal["dsm", "point_cloud", "ortho"], str],
-    ):
+    ) -> None:
         """Uploads data product to D2S. After the upload finishes, the data product may
         not be available for several minutes while it is processed on the D2S server. It
         will be returned by `Flight.get_data_products` once ready.
@@ -73,6 +73,47 @@ class Flight:
 
         print(f"{Path(filepath).name} uploaded")
 
+    def add_raw_data(self, filepath: str) -> None:
+        """Uploads zipped raw data to D2S. After the upload finishes, the raw data may
+        not be available for several minutes while it is processed on the D2S server. It
+        will be returned by `Flight.get_raw_data` once ready.
+
+        Args:
+            filepath (str): Full path to data product on local file system.
+        """
+        verify_file_exists(filepath)
+        validate_file_extension_for_raw_data(filepath)
+        # url for tusd server
+        endpoint = f"{self.client.base_url}/files"
+        # authorization cookie
+        cookies = {"access_token": self.client.session.cookies["access_token"]}
+        # project, flight, data type headers
+        headers = {
+            "X-Project-ID": self.project_id,
+            "X-Flight-ID": self.id,
+            "X-Data-Type": "raw",
+            "Accept-Language": "en-US,en;q=0.5",
+            "Origin": self.client.base_url,
+        }
+        # metadata about raw data file
+        metadata = {
+            "filename": Path(filepath).name,
+            "filetype": "application/zip",
+            "name": Path(filepath).name,
+            "relativePath": "null",
+            "type": "application/zip",
+        }
+        # create tus client and set headers and cookies
+        tus_client = tusc.TusClient(endpoint)
+        tus_client.set_headers(headers)
+        tus_client.set_cookies(cookies)
+        # create uploader for raw file with metadata
+        tus_uploader = tus_client.uploader(filepath, metadata=metadata)
+        # upload raw data file
+        r = tus_uploader.upload()
+
+        print(f"{Path(filepath).name} uploaded")
+
     def get_data_products(self) -> List[models.DataProduct]:
         """Return list of all active data products in a flight.
 
@@ -80,22 +121,34 @@ class Flight:
             List[models.DataProduct]: List of data products.
         """
         endpoint = f"/api/v1/projects/{self.project_id}/flights/{self.id}/data_products"
-        response = self.client.make_get_request(endpoint)
+        response_data = self.client.make_get_request(endpoint)
 
-        if response.status_code == 200:
-            response_data: List[dict] = response.json()
-            if len(response_data) > 0:
-                data_products = [
-                    models.DataProduct(
-                        self.client,
-                        **schemas.DataProduct.from_dict(data_product).__dict__,
-                    )
-                    for data_product in response_data
-                ]
-                return data_products
+        data_products = [
+            models.DataProduct(
+                self.client,
+                **schemas.DataProduct.from_dict(data_product).__dict__,
+            )
+            for data_product in response_data
+        ]
+        return data_products
 
-        pretty_print_response(response)
-        return []
+    def get_raw_data(self) -> List[models.RawData]:
+        """Return list of all active raw data in a flight.
+
+        Returns:
+            List[models.RawData]: List of raw data.
+        """
+        endpoint = f"/api/v1/projects/{self.project_id}/flights/{self.id}/raw_data"
+        response_data = self.client.make_get_request(endpoint)
+
+        all_raw_data = [
+            models.RawData(
+                self.client,
+                **schemas.RawData.from_dict(raw_data).__dict__,
+            )
+            for raw_data in response_data
+        ]
+        return all_raw_data
 
     def move_to_project(self, destination_project_id: UUID) -> None:
         """Moves flight from its current project to different project. You must be an
@@ -105,41 +158,29 @@ class Flight:
             destination_project_id (UUID): ID of project the flight will be moved to.
         """
         endpoint = f"/api/v1/projects/{self.project_id}/flights/{self.id}/move_to_project/{destination_project_id}"
-        response = self.client.make_put_request(endpoint)
+        response_data = self.client.make_put_request(endpoint)
 
-        if response.status_code == 200:
-            response_data: schemas.Flight = response.json()
-            if response_data:
-                updated_flight = schemas.Flight.from_dict(response_data).__dict__
-                for key, value in updated_flight.items():
-                    if hasattr(self, key):
-                        setattr(self, key, value)
-                    else:
-                        print(f"Warning: Attribute '{key}' not found in Flight class.")
-                return None
-
-        pretty_print_response(response)
+        updated_flight = schemas.Flight.from_dict(response_data).__dict__
+        for key, value in updated_flight.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+            else:
+                print(f"Warning: Attribute '{key}' not found in Flight class.")
         return None
 
     def update(self, **kwargs) -> None:
         """Update flight attributes."""
         endpoint = f"/api/v1/projects/{self.project_id}/flights/{self.id}"
-        response = self.client.make_put_request(
+        response_data = self.client.make_put_request(
             endpoint, json=json.loads(json.dumps(kwargs, default=str))
         )
 
-        if response.status_code == 200:
-            response_data: Optional[schemas.Flight] = response.json()
-            if response_data:
-                updated_flight = schemas.Flight.from_dict(response_data).__dict__
-                for key, value in updated_flight.items():
-                    if hasattr(self, key):
-                        setattr(self, key, value)
-                    else:
-                        print(f"Warning: Attribute '{key}' not found in Flight class.")
-                return None
-
-        pretty_print_response(response)
+        updated_flight = schemas.Flight.from_dict(response_data).__dict__
+        for key, value in updated_flight.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+            else:
+                print(f"Warning: Attribute '{key}' not found in Flight class.")
         return None
 
 
@@ -194,6 +235,21 @@ def validate_file_extension_and_data_type(filepath: str, data_type: str) -> None
         raise ValueError("Unrecognized file extension for data product")
 
 
+def validate_file_extension_for_raw_data(filepath: str) -> None:
+    """Checks if file extension for raw data is a zip archive.
+
+    Args:
+        filepath (str): Full path to raw data.
+
+    Raises:
+        ValueError: Raised if file extension is not .zip.
+    """
+    ext = Path(filepath).suffix
+
+    if ext != ".zip":
+        raise ValueError("Raw data must be in zip archive")
+
+
 def verify_file_exists(filepath: str) -> None:
     """Check if a file exists at the provided filepath.
 
@@ -204,4 +260,6 @@ def verify_file_exists(filepath: str) -> None:
         FileNotFoundError: Raised if file does not exist at filepath.
     """
     if not os.path.exists(filepath):
-        raise FileNotFoundError("Cannot find data product at provided path.")
+        raise FileNotFoundError(
+            f"Cannot find data product at provided path: {filepath}"
+        )

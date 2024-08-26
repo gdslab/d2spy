@@ -18,7 +18,7 @@ class Project:
     location_id: UUID
     planting_date: Optional[date]
     role: Literal["owner", "manager", "viewer"]
-    team_id: UUID
+    team_id: Optional[UUID]
     title: str
 
     @classmethod

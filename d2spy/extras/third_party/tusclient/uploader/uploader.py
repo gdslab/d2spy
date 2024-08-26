@@ -7,7 +7,10 @@ import requests
 
 from d2spy.extras.third_party.tusclient.uploader.baseuploader import BaseUploader
 
-from d2spy.extras.third_party.tusclient.exceptions import TusUploadFailed, TusCommunicationError
+from d2spy.extras.third_party.tusclient.exceptions import (
+    TusUploadFailed,
+    TusCommunicationError,
+)
 from d2spy.extras.third_party.tusclient.request import TusRequest, catch_requests_error
 
 
