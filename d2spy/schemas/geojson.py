@@ -1,19 +1,30 @@
-from typing import List, TypedDict
+from typing import Any, Dict, List, Literal, TypedDict
 from uuid import UUID
 
 
-class Geometry(TypedDict):
-    type: str
+class PolygonGeometry(TypedDict):
+    type: Literal["Polygon"]
     coordinates: List[List[List[float]]]
 
 
-class Properties(TypedDict):
+class ProjectProperties(TypedDict):
     id: UUID
     center_x: float
     center_y: float
 
 
-class GeoJSON(TypedDict):
+class ProjectBoundaryGeoJSON(TypedDict):
     type: str
-    geometry: Geometry
-    properties: Properties
+    geometry: PolygonGeometry
+    properties: ProjectProperties
+
+
+class Feature(TypedDict):
+    type: Literal["Feature"]
+    geometry: PolygonGeometry
+    properties: Dict[Any, Any]
+
+
+class FeatureCollection(TypedDict):
+    type: Literal["FeatureCollection"]
+    features: List[Feature]

@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Dict, List
 from unittest import TestCase
 from unittest.mock import patch
 
@@ -9,7 +10,7 @@ from d2spy.models.flight import Flight
 from d2spy.models.flight_collection import FlightCollection
 from d2spy.models.project import Project
 
-from example_data import TEST_MULTI_PROJECT, TEST_PROJECT
+from example_data import TEST_FEATURE_COLLECTION, TEST_MULTI_PROJECT, TEST_PROJECT
 
 
 class TestProject(TestCase):
@@ -297,6 +298,43 @@ class TestProject(TestCase):
         # Assert that the Project field attribute returns the project boundary
         self.assertEqual(project_boundary, TEST_PROJECT["field"])
 
+    @patch("d2spy.api_client.APIClient.make_get_request")
+    def test_get_map_layers(self, mock_make_get_request):
+        # Setup a test session
+        base_url = "https://example.com"
+        session = Session()
+        session.cookies.set("access_token", "fake_token")
+
+        # Instantiate APIClient with test URL and test session
+        client = APIClient(base_url, session)
+
+        # Test project data
+        project = Project(client, **TEST_PROJECT)
+        project_id = project.id
+
+        # Mock response from the GET request for map layers
+        # TEST_FEATURE_COLLECTION is a list of two feature collections
+        mock_response_data = TEST_FEATURE_COLLECTION
+        mock_make_get_request.return_value = mock_response_data
+
+        # Fetch map layers for project
+        map_layers = project.get_map_layers()
+
+        # Assert that the correct URL was used in the GET request
+        mock_make_get_request.assert_called_once_with(
+            f"/api/v1/projects/{project_id}/vector_layers"
+        )
+
+        # Assert that the correct project map layers were returned
+        self.assertIsInstance(map_layers, List)
+        self.assertEqual(len(map_layers), 2)
+        for feature_collection in map_layers:
+            self.assertIsInstance(feature_collection, Dict)
+            self.assertIn("features", feature_collection)
+            features = feature_collection["features"]
+            self.assertIsInstance(features, List)
+            self.assertEqual(len(features), 2)
+
     @patch("d2spy.api_client.APIClient.make_put_request")
     def test_update(self, mock_make_put_request):
         # Setup a test session
@@ -322,7 +360,7 @@ class TestProject(TestCase):
         update_data = {"title": new_title}
         project.update(**update_data)
 
-        # Assert that the correct URL and JSON payload was used in the PUT request
+        # Assert that the correct URL and JSON payload were used in the PUT request
         mock_make_put_request.assert_called_once_with(
             f"/api/v1/projects/{project_id}", json=update_data
         )

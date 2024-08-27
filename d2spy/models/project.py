@@ -1,20 +1,20 @@
 import json
 from datetime import date, datetime
-from typing import Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 from uuid import UUID
 
 from d2spy import models, schemas
 from d2spy.api_client import APIClient
 from d2spy.extras.utils import ensure_dict, ensure_list_of_dict
 from d2spy.models.flight_collection import FlightCollection
-from d2spy.schemas.geojson import GeoJSON
+from d2spy.schemas.geojson import ProjectBoundaryGeoJSON
 
 
 class Project:
     id: UUID
     deactivated_at: Optional[datetime]
     description: str
-    field: GeoJSON
+    field: ProjectBoundaryGeoJSON
     flight_count: int
     harvest_date: Optional[date]
     is_active: bool
@@ -122,11 +122,11 @@ class Project:
         ]
         return FlightCollection(collection=flights)
 
-    def get_project_boundary(self) -> Optional[GeoJSON]:
+    def get_project_boundary(self) -> Optional[ProjectBoundaryGeoJSON]:
         """Return project boundary in GeoJSON format.
 
         Returns:
-            GeoJSON: Project boundary in GeoJSON format.
+            ProjectBoundaryGeoJSON: Project boundary in GeoJSON format.
         """
         if hasattr(self, "field"):
             return self.field
@@ -136,6 +136,18 @@ class Project:
         response_data = ensure_dict(response_data)
         project = schemas.Project.from_dict(response_data)
         return project.field
+
+    def get_map_layers(self) -> List[Dict[Any, Any]]:
+        """Return list of GeoJSON FeatureCollections for all map layers
+        associated with this project.
+
+        Returns:
+            List[Dict[Any, Any]]: List of GeoJSON FeatureCollections.
+        """
+        endpoint = f"/api/v1/projects/{self.id}/vector_layers"
+        response_data = self.client.make_get_request(endpoint)
+        response_data = ensure_list_of_dict(response_data)
+        return response_data
 
     def update(self, **kwargs) -> None:
         """Update project attributes."""

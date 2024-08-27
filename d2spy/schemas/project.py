@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Literal, Optional, TypedDict
 from uuid import UUID
 
-from d2spy.schemas.geojson import GeoJSON
+from d2spy.schemas.geojson import ProjectBoundaryGeoJSON
 
 
 @dataclass
@@ -11,7 +11,7 @@ class Project:
     id: UUID
     deactivated_at: Optional[datetime]
     description: str
-    field: GeoJSON
+    field: ProjectBoundaryGeoJSON
     flight_count: int
     harvest_date: Optional[date]
     is_active: bool
