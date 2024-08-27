@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "d2spy"
-version = "0.1.0"
+version = "0.1.1"
 license = "MIT License"
 description = "Python package for interacting with a Data to Science instance."
 authors = ["Ben Hancock <hancocb@purdue.edu>"]
@@ -12,7 +12,6 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -21,13 +20,14 @@ classifiers = [
 packages = [{ include = "d2spy" }]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.9"
 requests = "^2.31.0"
 
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.4.4"
 requests-mock = "^1.11.0"
+pre-commit = "^3.8.0"
 
 
 [tool.poetry.group.docs.dependencies]
@@ -39,6 +39,8 @@ mkdocs-jupyter = "^0.24.7"
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"
 notebook = "^7.1.3"
+types-requests = "^2.32.0.20240712"
+black = "^24.8.0"
 
 [build-system]
 requires = ["poetry-core"]

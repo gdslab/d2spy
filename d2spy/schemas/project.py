@@ -1,6 +1,6 @@
 from datetime import date, datetime
 from dataclasses import dataclass
-from typing import Literal, Optional, TypedDict
+from typing import Any, Dict, Literal, Optional, TypedDict
 from uuid import UUID
 
 from d2spy.schemas.geojson import GeoJSON
@@ -22,7 +22,7 @@ class Project:
     title: str
 
     @classmethod
-    def from_dict(cls, data: dict) -> "Project":
+    def from_dict(cls, data: Dict[Any, Any]) -> "Project":
         return cls(
             id=data["id"],
             deactivated_at=data["deactivated_at"],
@@ -54,7 +54,7 @@ class MultiProject:
     title: str
 
     @classmethod
-    def from_dict(cls, data: dict) -> "Project":
+    def from_dict(cls, data: dict) -> "MultiProject":
         return cls(
             id=data["id"],
             centroid=data["centroid"],

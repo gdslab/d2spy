@@ -1,14 +1,12 @@
 from datetime import datetime, timedelta
-from typing import List
 from unittest import TestCase
-from unittest.mock import patch, Mock
+from unittest.mock import patch
 
 from requests import Session
 
 from d2spy.models.project import Project
 from d2spy.models.project_collection import ProjectCollection
 from d2spy.workspace import Workspace
-from example_data import TEST_PROJECT
 
 
 class TestWorkspace(TestCase):
@@ -187,7 +185,7 @@ class TestWorkspace(TestCase):
 
         # Assert that the correct URL and parameters were used in the GET request
         mock_make_get_request.assert_called_once_with(
-            f"/api/v1/projects", params={"has_raster": False}
+            "/api/v1/projects", params={"has_raster": False}
         )
 
         # Assert that the response data was a collection of five project objects

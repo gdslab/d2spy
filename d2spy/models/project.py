@@ -1,18 +1,29 @@
-from datetime import date, datetime
 import json
-import requests
-from datetime import date
-from typing import List, Literal, Optional, Union
+from datetime import date, datetime
+from typing import Literal, Optional, Union
 from uuid import UUID
 
 from d2spy import models, schemas
 from d2spy.api_client import APIClient
-from d2spy.extras.utils import pretty_print_response
+from d2spy.extras.utils import ensure_dict, ensure_list_of_dict
 from d2spy.models.flight_collection import FlightCollection
 from d2spy.schemas.geojson import GeoJSON
 
 
 class Project:
+    id: UUID
+    deactivated_at: Optional[datetime]
+    description: str
+    field: GeoJSON
+    flight_count: int
+    harvest_date: Optional[date]
+    is_active: bool
+    location_id: UUID
+    planting_date: Optional[date]
+    role: Literal["owner", "manager", "viewer"]
+    team_id: Optional[UUID]
+    title: str
+
     def __init__(self, client: APIClient, **kwargs):
         self.client = client
         # project attributes returned from API
@@ -40,8 +51,8 @@ class Project:
             altitude (float): Flight altitude.
             side_overlap (float): Flight side overlap %.
             forward_overlap (float): Flight forward overlap %.
-            sensor (Literal["RGB", "Multispectral", "LiDAR", "Other"]): Sensor used for collecting data on flight.
-            platform (Union[Literal["Phantom_4", "M300", "M350"], str]): Platform used for flight.
+            sensor (Literal["RGB", "Multispectral", "LiDAR", "Other"]): Camera sensor.
+            platform (Union[Literal["Phantom_4", "M300", "M350"], str]): UAS platform.
             pilot_id (Optional[UUID]): ID of the flight's pilot. Defaults to None.
 
         Returns:
@@ -52,16 +63,13 @@ class Project:
         # if pilot id not provided, use current user's id
         if not pilot_id:
             user = self.client.make_get_request("/api/v1/users/current")
+            user = ensure_dict(user)
             pilot_id = user["id"]
-
-        # Check if we need to serialize the acquisition date
-        if isinstance(acquisition_date, date):
-            acquisition_date = acquisition_date.strftime("%Y-%m-%d")
 
         # form data for flight creation
         data = {
             "name": name,
-            "acquisition_date": acquisition_date,
+            "acquisition_date": acquisition_date.strftime("%Y-%m-%d"),
             "altitude": altitude,
             "side_overlap": side_overlap,
             "forward_overlap": forward_overlap,
@@ -90,24 +98,24 @@ class Project:
         """
         endpoint = f"/api/v1/projects/{self.id}/flights/{flight_id}"
         response_data = self.client.make_get_request(endpoint)
-
+        response_data = ensure_dict(response_data)
         flight = schemas.Flight.from_dict(response_data)
         return models.Flight(self.client, **flight.__dict__)
 
-    def get_flights(self, has_raster: Optional[bool] = False) -> List[models.Flight]:
+    def get_flights(self, has_raster: Optional[bool] = False) -> FlightCollection:
         """Return list of all active flights in project.
 
         Args:
-            has_raster (Optional[bool], optional): Only return flights with active raster data products. Excludes non-raster data products. Defaults to False.
+            has_raster (Optional[bool], optional): Only return flights with rasters.
 
         Returns:
-            List[models.Flight]: List of flights.
+            FlightCollection: Collection of flights.
         """
         endpoint = f"/api/v1/projects/{self.id}/flights"
         response_data = self.client.make_get_request(
             endpoint, params={"has_raster": has_raster}
         )
-
+        response_data = ensure_list_of_dict(response_data)
         flights = [
             models.Flight(self.client, **schemas.Flight.from_dict(flight).__dict__)
             for flight in response_data
@@ -125,7 +133,7 @@ class Project:
 
         endpoint = f"/api/v1/projects/{self.id}"
         response_data = self.client.make_get_request(endpoint)
-
+        response_data = ensure_dict(response_data)
         project = schemas.Project.from_dict(response_data)
         return project.field
 

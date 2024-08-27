@@ -3,8 +3,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 <p align="center">
-  <img 
-    src="./assets/d2s-logo.png" 
+  <img
+    src="./assets/d2s-logo.png"
     alt="Data to Science logo"
     width="128"
 >

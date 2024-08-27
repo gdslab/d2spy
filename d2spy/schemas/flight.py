@@ -1,6 +1,6 @@
 from datetime import date, datetime
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Dict, List, Optional
 from uuid import UUID
 
 from d2spy.schemas.data_product import DataProduct
@@ -23,7 +23,7 @@ class Flight:
     data_products: List[DataProduct]
 
     @classmethod
-    def from_dict(cls, data: dict) -> "Flight":
+    def from_dict(cls, data: Dict) -> "Flight":
         return cls(
             id=data["id"],
             name=data["name"],

@@ -1,6 +1,6 @@
 from datetime import datetime
 from dataclasses import dataclass
-from typing import Optional
+from typing import Dict, Optional
 from uuid import UUID
 
 
@@ -16,7 +16,7 @@ class RawData:
     url: str
 
     @classmethod
-    def from_dict(cls, data: dict) -> "RawData":
+    def from_dict(cls, data: Dict) -> "RawData":
         return cls(
             id=data["id"],
             filepath=data["filepath"],

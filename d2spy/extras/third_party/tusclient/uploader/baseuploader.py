@@ -216,7 +216,7 @@ class BaseUploader:
 
     def set_url(self, url: str):
         """Set the upload URL"""
-        self.url = url
+        self.url = url  # type: ignore
 
     def get_request_length(self):
         """

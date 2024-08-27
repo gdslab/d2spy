@@ -1,4 +1,3 @@
-from datetime import date, datetime
 from typing import List
 
 from d2spy.models.data_product import DataProduct
@@ -7,7 +6,7 @@ from d2spy.models.data_product import DataProduct
 class DataProductCollection:
     """Collection of Data to Science data products associated with a flight."""
 
-    def __init__(self, collection: List[DataProduct] = []) -> None:
+    def __init__(self, collection: List[DataProduct] = []):
         self.collection = collection
 
     def __getitem__(self, index: int) -> DataProduct:

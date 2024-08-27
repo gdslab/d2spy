@@ -4,7 +4,10 @@ from functools import wraps
 
 import requests
 
-from d2spy.extras.third_party.tusclient.exceptions import TusUploadFailed, TusCommunicationError
+from d2spy.extras.third_party.tusclient.exceptions import (
+    TusUploadFailed,
+    TusCommunicationError,
+)
 
 
 # Catches requests exceptions and throws custom tuspy errors.

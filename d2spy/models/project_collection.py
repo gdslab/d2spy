@@ -6,7 +6,7 @@ from d2spy.models.project import Project
 class ProjectCollection:
     """Collection of Data to Science projects."""
 
-    def __init__(self, collection: List[Project] = []) -> None:
+    def __init__(self, collection: List[Project] = []):
         self.collection = collection
 
     def __getitem__(self, index: int) -> Project:

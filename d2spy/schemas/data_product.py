@@ -1,6 +1,6 @@
 from datetime import datetime
 from dataclasses import dataclass
-from typing import Optional
+from typing import Dict, Optional
 from uuid import UUID
 
 from d2spy.schemas.stac_properties import STACProperties
@@ -21,7 +21,7 @@ class DataProduct:
     url: str
 
     @classmethod
-    def from_dict(cls, data: dict) -> "DataProduct":
+    def from_dict(cls, data: Dict) -> "DataProduct":
         return cls(
             id=data["id"],
             data_type=data["data_type"],

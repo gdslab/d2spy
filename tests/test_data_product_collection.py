@@ -1,4 +1,3 @@
-from datetime import date
 from unittest import TestCase
 
 from requests import Session

@@ -1,6 +1,6 @@
-from typing import Dict, List, Union
+from typing import Any, Dict, List, Union
 
-from requests import Response, Session
+from requests import Session
 
 from d2spy.extras.utils import pretty_print_response
 
@@ -25,7 +25,9 @@ class APIClient:
         if not self.session.cookies.get("access_token"):
             raise ValueError("Session missing access token. Must sign in first.")
 
-    def make_get_request(self, endpoint: str, **kwargs) -> Union[Dict, List]:
+    def make_get_request(
+        self, endpoint: str, **kwargs
+    ) -> Union[Dict[Any, Any], List[Dict[Any, Any]]]:
         """Makes GET request to D2S API.
 
         Args:
@@ -37,44 +39,44 @@ class APIClient:
         url = self.base_url + endpoint
         response = self.session.get(url, **kwargs)
 
-        if response.status_code == 200:
-            return response.json()
-        else:
+        if response.status_code != 200:
             pretty_print_response(response)
             response.raise_for_status()
 
-    def make_post_request(self, endpoint: str, **kwargs) -> Union[Dict, List]:
+        return response.json()
+
+    def make_post_request(self, endpoint: str, **kwargs) -> Dict[Any, Any]:
         """Make POST request to D2S API.
 
         Args:
             endpoint (str): D2S endpoint for request.
 
         Returns:
-            Union[Dict, List]: JSON response from request.
+            Dict: JSON response from request.
         """
         url = self.base_url + endpoint
         response = self.session.post(url, **kwargs)
-        print(response)
-        if response.status_code == 200 or response.status_code == 201:
-            return response.json()
-        else:
+
+        if response.status_code != 200 and response.status_code != 201:
             pretty_print_response(response)
             response.raise_for_status()
 
-    def make_put_request(self, endpoint: str, **kwargs) -> Union[Dict, List]:
+        return response.json()
+
+    def make_put_request(self, endpoint: str, **kwargs) -> Dict[Any, Any]:
         """Make PUT request to D2S API.
 
         Args:
             endpoint (str): D2S endpoint for request.
 
         Returns:
-            Union[Dict, List]: JSON response from request.
+            Dict: JSON response from request.
         """
         url = self.base_url + endpoint
         response = self.session.put(url, **kwargs)
 
-        if response.status_code == 200:
-            return response.json()
-        else:
+        if response.status_code != 200:
             pretty_print_response(response)
             response.raise_for_status()
+
+        return response.json()

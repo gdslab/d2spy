@@ -1,9 +1,8 @@
 import os
 import tempfile
-from datetime import date
 from typing import List
 from unittest import TestCase
-from unittest.mock import patch, Mock
+from unittest.mock import patch
 
 from requests import Session
 
@@ -13,7 +12,6 @@ from d2spy.models.data_product_collection import DataProductCollection
 from d2spy.models.flight import Flight
 from d2spy.models.project import Project
 from d2spy.models.raw_data import RawData
-from d2spy.workspace import Workspace
 
 from example_data import TEST_FLIGHT, TEST_PROJECT
 
@@ -31,8 +29,6 @@ class TestFlight(TestCase):
 
         # Test flight data
         flight = Flight(client, **TEST_FLIGHT)
-        flight_id = TEST_FLIGHT["id"]
-        project_id = TEST_FLIGHT["project_id"]
 
         # Create temporary file for the data product
         with tempfile.NamedTemporaryFile(suffix=".tif") as temp_data_product:
@@ -83,8 +79,6 @@ class TestFlight(TestCase):
 
         # Test flight data
         flight = Flight(client, **TEST_FLIGHT)
-        flight_id = TEST_FLIGHT["id"]
-        project_id = TEST_FLIGHT["project_id"]
 
         # Create temporary file for the raw data
         with tempfile.NamedTemporaryFile(suffix=".zip") as temp_raw_data:
@@ -138,7 +132,8 @@ class TestFlight(TestCase):
         flight_id = TEST_FLIGHT["id"]
         project_id = TEST_FLIGHT["project_id"]
         data_product_id = "2c2d5ce4-5611-4108-9f66-83ca51f5f52b"
-        filepath = f"/static/projects/{project_id}/flights/{flight_id}/data_products/{data_product_id}/cbfc16d2-e038-4876-a412-aecb4d97e544.tif"
+        filepath = f"/static/projects/{project_id}/flights/{flight_id}/data_products/"
+        filepath += f"{data_product_id}/cbfc16d2-e038-4876-a412-aecb4d97e544.tif"
 
         # Test data product
         data_type = "dsm"
@@ -224,10 +219,10 @@ class TestFlight(TestCase):
         flight_id = TEST_FLIGHT["id"]
         project_id = TEST_FLIGHT["project_id"]
         raw_data_id = "218e24e8-fe2e-4892-a771-6440a949c459"
-        filepath = f"/static/projects/{project_id}/flights/{flight_id}/raw_data/{raw_data_id}/d9b09d73-832d-48aa-8c51-ba8a25cf3dff.zip"
+        filepath = f"/static/projects/{project_id}/flights/{flight_id}/raw_data/"
+        filepath += f"{raw_data_id}/d9b09d73-832d-48aa-8c51-ba8a25cf3dff.zip"
 
         # Test data product
-        data_type = "raw"
         raw_data_test_data = {"filepath": "/path/to/test_raw_data.zip"}
 
         # Mock response from the GET request for multiple raw data zips
@@ -299,7 +294,8 @@ class TestFlight(TestCase):
 
         # Assert that the correct URL and JSON payload was used in the PUT request
         mock_make_put_request.assert_called_once_with(
-            f"/api/v1/projects/{src_project.id}/flights/{flight_id}/move_to_project/{dst_project.id}"
+            f"/api/v1/projects/{src_project.id}/flights/{flight_id}/"
+            f"move_to_project/{dst_project.id}"
         )
 
         # Assert that the flight object now has the new platform
@@ -338,3 +334,4 @@ class TestFlight(TestCase):
 
         # Assert that the flight object now has the new platform
         self.assertEqual(flight.platform, new_platform)
+        self.assertNotEqual(flight.platform, old_platform)

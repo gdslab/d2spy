@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import List
+from typing import List, Union
 
 from d2spy.models.flight import Flight
 
@@ -7,7 +7,7 @@ from d2spy.models.flight import Flight
 class FlightCollection:
     """Collection of Data to Science flights associated with a project."""
 
-    def __init__(self, collection: List[Flight] = []) -> None:
+    def __init__(self, collection: List[Flight] = []):
         self.collection = collection
 
     def __getitem__(self, index: int) -> Flight:
@@ -19,7 +19,7 @@ class FlightCollection:
     def __repr__(self) -> str:
         return f"FlightCollection({self.collection})"
 
-    def filter_by_date(self, start_date: date, end_date: date) -> List[Flight]:
+    def filter_by_date(self, start_date: date, end_date: date) -> "FlightCollection":
         """Returns list of flights with at least one flight within the date range.
 
         Args:
@@ -38,7 +38,7 @@ class FlightCollection:
         return FlightCollection(collection=filtered_collection)
 
 
-def convert_from_str_to_date(date_str: str) -> date:
+def convert_from_str_to_date(date_str: Union[date, str]) -> date:
     """Convert date string to date object.
 
     Args:
@@ -54,7 +54,9 @@ def convert_from_str_to_date(date_str: str) -> date:
         if isinstance(date_str, str):
             return datetime.strptime(date_str, "%Y-%m-%d").date()
         raise
-    except Exception:
+    except Exception as error:
         print(
-            f"Unable to convert acquistion date {date_str} to date object. Acquisition date string must be in %Y-%m-%d format."
+            f"Unable to convert acquistion date {date_str} to date object. "
+            "Acquisition date string must be in %Y-%m-%d format."
         )
+        raise (error)

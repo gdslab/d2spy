@@ -1,23 +1,35 @@
 import json
 import os
-import requests
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
-from typing import List, Literal, Union
+from typing import Dict, List, Literal, Optional, Union
 from uuid import UUID
 
 from d2spy import models, schemas
 from d2spy.api_client import APIClient
+from d2spy.models.data_product import DataProduct
 from d2spy.models.data_product_collection import DataProductCollection
 from d2spy.extras.third_party.tusclient import client as tusc
-from d2spy.extras.third_party.tusclient.uploader import Uploader
-from d2spy.extras.utils import pretty_print_response
 
 
 class Flight:
+    id: UUID
+    name: Optional[str]
+    acquisition_date: date
+    altitude: float
+    side_overlap: float
+    forward_overlap: float
+    sensor: str
+    platform: str
+    is_active: bool
+    deactivated_at: Optional[datetime]
+    project_id: UUID
+    pilot_id: UUID
+    data_products: List[DataProduct]
+
     def __init__(self, client: APIClient, **kwargs):
         self.client = client
-        # flight attributes returned from API
+        # Flight attributes returned from API
         self.__dict__.update(kwargs)
 
     def __repr__(self):
@@ -39,7 +51,7 @@ class Flight:
 
         Args:
             filepath (str): Full path to data product on local file system.
-            data_type (Union[Literal["dsm", "point_cloud", "ortho"], str]): Data product's data type.
+            data_type (Union[Literal["dsm", "point_cloud", "ortho"], str]): Data type.
         """
         verify_file_exists(filepath)
         validate_file_extension_and_data_type(filepath, data_type)
@@ -48,9 +60,9 @@ class Flight:
         # authorization cookie
         cookies = {"access_token": self.client.session.cookies["access_token"]}
         # project, flight, data type headers
-        headers = {
-            "X-Project-ID": self.project_id,
-            "X-Flight-ID": self.id,
+        headers: Dict[str, str] = {
+            "X-Project-ID": str(self.project_id),
+            "X-Flight-ID": str(self.id),
             "X-Data-Type": data_type,
             "Accept-Language": "en-US,en;q=0.5",
             "Origin": self.client.base_url,
@@ -70,7 +82,7 @@ class Flight:
         # create uploader for data product file with metadata
         tus_uploader = tus_client.uploader(filepath, metadata=metadata)
         # upload data product file
-        r = tus_uploader.upload()
+        tus_uploader.upload()
 
         print(f"{Path(filepath).name} uploaded")
 
@@ -89,9 +101,9 @@ class Flight:
         # authorization cookie
         cookies = {"access_token": self.client.session.cookies["access_token"]}
         # project, flight, data type headers
-        headers = {
-            "X-Project-ID": self.project_id,
-            "X-Flight-ID": self.id,
+        headers: Dict[str, str] = {
+            "X-Project-ID": str(self.project_id),
+            "X-Flight-ID": str(self.id),
             "X-Data-Type": "raw",
             "Accept-Language": "en-US,en;q=0.5",
             "Origin": self.client.base_url,
@@ -111,7 +123,7 @@ class Flight:
         # create uploader for raw file with metadata
         tus_uploader = tus_client.uploader(filepath, metadata=metadata)
         # upload raw data file
-        r = tus_uploader.upload()
+        tus_uploader.upload()
 
         print(f"{Path(filepath).name} uploaded")
 
@@ -119,7 +131,7 @@ class Flight:
         """Return list of all active data products in a flight.
 
         Returns:
-            List[models.DataProduct]: List of data products.
+            DataProductCollection: Collection of data products.
         """
         endpoint = f"/api/v1/projects/{self.project_id}/flights/{self.id}/data_products"
         response_data = self.client.make_get_request(endpoint)
@@ -158,7 +170,8 @@ class Flight:
         Args:
             destination_project_id (UUID): ID of project the flight will be moved to.
         """
-        endpoint = f"/api/v1/projects/{self.project_id}/flights/{self.id}/move_to_project/{destination_project_id}"
+        endpoint = f"/api/v1/projects/{self.project_id}/flights/{self.id}"
+        endpoint += f"/move_to_project/{destination_project_id}"
         response_data = self.client.make_put_request(endpoint)
 
         updated_flight = schemas.Flight.from_dict(response_data).__dict__
@@ -218,9 +231,9 @@ def validate_file_extension_and_data_type(filepath: str, data_type: str) -> None
         data_type (str): Data product's data type (e.g., dsm, ortho, etc.)
 
     Raises:
-        ValueError: Raised if data type is point cloud and file extension is tif.
-        ValueError: Raised if data type is not point cloud and file extension is las/laz.
-        ValueError: Raised if file extension is not supported.
+        ValueError: Raised if data type is point cloud and file ext. is tif.
+        ValueError: Raised if data type is not point cloud and file ext. is las/laz.
+        ValueError: Raised if file ext. is not supported.
     """
     ext = Path(filepath).suffix
 
@@ -229,7 +242,8 @@ def validate_file_extension_and_data_type(filepath: str, data_type: str) -> None
 
     if (ext == ".las" or ext == ".laz") and data_type != "point_cloud":
         raise ValueError(
-            'Data products with .las or .laz extension must be assigned "point_cloud" data type'
+            'Data products with .las or .laz extension must be assigned "point_cloud" '
+            "data type"
         )
 
     if ext != ".tif" and ext != ".las" and ext != ".laz":

@@ -1,7 +1,6 @@
 from datetime import date
-from typing import List
 from unittest import TestCase
-from unittest.mock import patch, Mock
+from unittest.mock import patch
 
 from requests import Session
 
@@ -9,7 +8,6 @@ from d2spy.api_client import APIClient
 from d2spy.models.flight import Flight
 from d2spy.models.flight_collection import FlightCollection
 from d2spy.models.project import Project
-from d2spy.workspace import Workspace
 
 from example_data import TEST_MULTI_PROJECT, TEST_PROJECT
 
@@ -34,7 +32,7 @@ class TestProject(TestCase):
 
         # Test flight data
         flight_data = {
-            "acquisition_date": str(date.today()),
+            "acquisition_date": date.today(),
             "altitude": 40,
             "side_overlap": 85,
             "forward_overlap": 85,
@@ -68,12 +66,17 @@ class TestProject(TestCase):
 
         # Assert that the correct URL and JSON payload was used in the POST request
         mock_make_post_request.assert_called_once_with(
-            f"/api/v1/projects/{project_id}/flights", json=flight_data
+            f"/api/v1/projects/{project_id}/flights",
+            json={
+                **flight_data,
+                # serialize date
+                "acquisition_date": str(flight_data["acquisition_date"]),
+            },
         )
 
         # Assert that the response data matches the test flight data
         self.assertIsInstance(flight, Flight)
-        self.assertEqual(flight.acquisition_date, flight_data["acquisition_date"])
+        self.assertEqual(flight.acquisition_date, str(flight_data["acquisition_date"]))
         self.assertEqual(flight.altitude, flight_data["altitude"])
         self.assertEqual(flight.side_overlap, flight_data["side_overlap"])
         self.assertEqual(flight.forward_overlap, flight_data["forward_overlap"])
@@ -108,13 +111,16 @@ class TestProject(TestCase):
             "api_access_token": None,
             "exts": [],
             "is_superuser": False,
-            "profile_url": "http://example.com/static/users/dd18a0ea-d6fe-49e2-b16b-cb0faa7548b5/4abeedc1-91c2-48c5-8def-a28017bd9289.png",
+            "profile_url": (
+                "http://example.com/static/users/dd18a0ea-d6fe-49e2-b16b-"
+                "cb0faa7548b5/4abeedc1-91c2-48c5-8def-a28017bd9289.png"
+            ),
         }
         mock_make_get_request.return_value = mock_response_data
 
         # Test flight data without a pilot ID
         flight_data = {
-            "acquisition_date": str(date.today()),
+            "acquisition_date": date.today(),
             "altitude": 40,
             "side_overlap": 85,
             "forward_overlap": 85,
@@ -124,7 +130,7 @@ class TestProject(TestCase):
         }
 
         # Add a test flight to the test project
-        flight = project.add_flight(**flight_data)
+        project.add_flight(**flight_data)
 
         # Assert that the correct URL was used in the GET request
         mock_make_get_request.assert_called_once_with("/api/v1/users/current")

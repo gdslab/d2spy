@@ -1,8 +1,6 @@
 import getpass
-import json
 import requests
-from typing import Dict, Optional, Tuple
-from urllib.parse import urlparse
+from typing import Optional
 
 from d2spy.extras.utils import pretty_print_response
 from d2spy.models.user import User
@@ -22,12 +20,14 @@ class Auth:
         """
         self.base_url: str = base_url
 
-        if test_base_url(self.base_url) is False:
+        if is_valid_base_url(self.base_url) is False:
             raise ValueError("unable to connect to provided host")
 
         self.session: requests.Session = requests.session()
 
-    def login(self, email: str, password: Optional[str] = None) -> requests.session:
+    def login(
+        self, email: str, password: Optional[str] = None
+    ) -> Optional[requests.Session]:
         """Login to D2S platform with email and password.
 
         Args:
@@ -49,9 +49,7 @@ class Auth:
         # JWT access token returned for successful request
         if response.status_code == 200 and "access_token" in response.cookies:
             # Add JWT access token to session cookies
-            self.session.cookies.set(
-                "access_token", response.cookies.get("access_token")
-            )
+            self.session.cookies.set("access_token", response.cookies["access_token"])
             # Fetch user object associated with access token
             user = self.get_current_user()
             # Return dictionary of user attributes and values
@@ -90,7 +88,7 @@ class Auth:
             return None
 
 
-def test_base_url(base_url: str) -> bool:
+def is_valid_base_url(base_url: str) -> bool:
     """Return true if base_url returns HTTP 200 else false.
 
     Args:

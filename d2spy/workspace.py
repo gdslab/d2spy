@@ -1,10 +1,10 @@
 import requests
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 
 from d2spy import models, schemas
 from d2spy.api_client import APIClient
-from d2spy.extras.utils import pretty_print_response
+from d2spy.extras.utils import ensure_dict, ensure_list_of_dict
 from d2spy.models.project_collection import ProjectCollection
 
 
@@ -31,13 +31,13 @@ class Workspace:
             title (str): Title for project.
             description (str): Description of project.
             location (dict): GeoJSON object representing location of project.
-            planting_date (Optional[datetime]): Optional planting date. Defaults to None.
-            harvest_date (Optional[datetime]): Optional harvest date. Defaults to None.
+            planting_date (Optional[datetime]): Planting date. Defaults to None.
+            harvest_date (Optional[datetime]): Harvest date. Defaults to None.
 
         Returns:
             models.Project: New project instance.
         """
-        endpoint = f"/api/v1/projects"
+        endpoint = "/api/v1/projects"
         data = {
             "title": title,
             "description": description,
@@ -61,25 +61,25 @@ class Workspace:
         """
         endpoint = f"/api/v1/projects/{project_id}"
         response_data = self.client.make_get_request(endpoint)
+        response_data = ensure_dict(response_data)
         project = schemas.Project.from_dict(response_data)
-
         return models.Project(self.client, **project.__dict__)
 
-    def get_projects(self, has_raster: Optional[bool] = False) -> List[models.Project]:
+    def get_projects(self, has_raster: Optional[bool] = False) -> ProjectCollection:
         """Request multiple projects. Only active projects viewable by
         user will be returned.
 
         Args:
-            has_raster (Optional[bool], optional): Only return projects with flights that have active raster data products. Excludes non-raster data products. Defaults to False.
+            has_raster (Optional[bool], optional): Only return projects with rasters.
 
         Returns:
-            List[models.Project]: List of all projects viewable by user.
+            ProjectCollection: Collection of all projects viewable by user.
         """
         endpoint = "/api/v1/projects"
         response_data = self.client.make_get_request(
             endpoint, params={"has_raster": has_raster}
         )
-
+        response_data = ensure_list_of_dict(response_data)
         projects = [
             models.Project(
                 self.client, **schemas.MultiProject.from_dict(project).__dict__
