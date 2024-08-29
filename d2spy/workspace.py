@@ -34,6 +34,13 @@ class Workspace:
 
         return cls(base_url, auth.session)
 
+    def logout(self) -> None:
+        """Logout of D2S platform."""
+        # Delete access-token cookie from session and end session
+        self.session.cookies.clear(domain="", path="/", name="access_token")
+        self.session.close()
+        print("session ended")
+
     def add_project(
         self,
         title: str,

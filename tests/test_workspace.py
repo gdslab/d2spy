@@ -48,6 +48,46 @@ class TestWorkspace(TestCase):
         self.assertIn("access_token", workspace.session.cookies)
         self.assertIsInstance(workspace.client, APIClient)
 
+    @patch("d2spy.auth.requests.get")
+    @patch("getpass.getpass")
+    @patch("d2spy.auth.requests.post")
+    @patch("d2spy.auth.requests.Session.get")
+    def test_logout(self, mock_get_login, mock_post, mock_getpass, mock_get_init):
+        # Mock the GET request that occurs when Auth is initialized
+        mock_get_init_response = Mock()
+        mock_get_init_response.status_code = 200
+        mock_get_init.return_value = mock_get_init_response
+
+        # Mock the POST request that occurs during login
+        mock_post_response = Mock()
+        mock_post_response.cookies = {"access_token": "fake_token"}
+        mock_post_response.status_code = 200
+        mock_post.return_value = mock_post_response
+
+        # User email addressed used during login
+        user_email = "user@example.com"
+        # Mock user password
+        user_password = "userpassword"
+        mock_getpass.return_value = user_password
+
+        # Mock the GET request that occurs after login
+        mock_get_login_response = Mock()
+        mock_get_login_response.status_code = 200
+        mock_get_login.return_value = mock_get_login_response
+
+        # Create workspace
+        base_url = "https://example.com"
+        workspace = Workspace.create(base_url, user_email)
+
+        # Assert access token is in session after login
+        self.assertIn("access_token", workspace.session.cookies)
+
+        # Logout of session
+        workspace.logout()
+
+        # Assert access token is no longer in session after logout
+        self.assertNotIn("access_token", workspace.session.cookies)
+
     @patch("d2spy.api_client.APIClient.make_post_request")
     def test_add_project(self, mock_make_post_request):
         # Setup a test session
