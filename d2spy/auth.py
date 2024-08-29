@@ -46,6 +46,7 @@ class Auth:
         url = f"{self.base_url}/api/v1/auth/access-token"
         # Post credentials to access-token endpoint
         response = requests.post(url, data=credentials)
+        print(response.status_code == 200)
         # JWT access token returned for successful request
         if response.status_code == 200 and "access_token" in response.cookies:
             # Add JWT access token to session cookies
@@ -99,7 +100,7 @@ def is_valid_base_url(base_url: str) -> bool:
     """
     response: Optional[requests.Response] = None
     try:
-        response = requests.get(base_url)
+        response = requests.get(f"{base_url}/api/v1/health")
     except requests.exceptions.ConnectionError:
         response = None
     finally:

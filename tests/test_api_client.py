@@ -9,7 +9,7 @@ class TestAPIClient(TestCase):
     def test_make_get_request(self, MockSession):
         # Create a mock JSON response
         mock_response = Mock()
-        expected_result = {"status": "healthly"}
+        expected_result = {"status": "healthy"}
         mock_response.status_code = 200
         mock_response.json.return_value = expected_result
 

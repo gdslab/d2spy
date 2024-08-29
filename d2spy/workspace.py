@@ -4,6 +4,7 @@ from typing import Optional
 
 from d2spy import models, schemas
 from d2spy.api_client import APIClient
+from d2spy.auth import Auth
 from d2spy.extras.utils import ensure_dict, ensure_list_of_dict
 from d2spy.models.project_collection import ProjectCollection
 
@@ -16,6 +17,22 @@ class Workspace:
         self.session = session
 
         self.client = APIClient(self.base_url, self.session)
+
+    @classmethod
+    def create(cls, base_url: str, email: str) -> "Workspace":
+        """Login and create workspace.
+
+        Args:
+            base_url (str): Base URL for D2S instance.
+            email (str): Email address used to sign in to D2S.
+
+        Returns:
+            Workspace: D2S workspace for creating and viewing data.
+        """
+        auth = Auth(base_url)
+        auth.login(email=email)
+
+        return cls(base_url, auth.session)
 
     def add_project(
         self,
