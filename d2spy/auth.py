@@ -4,6 +4,7 @@ from typing import Optional
 
 from d2spy.extras.utils import pretty_print_response
 from d2spy.models.user import User
+from d2spy.schemas.session import D2SpySession
 
 
 class Auth:
@@ -23,11 +24,11 @@ class Auth:
         if is_valid_base_url(self.base_url) is False:
             raise ValueError("unable to connect to provided host")
 
-        self.session: requests.Session = requests.session()
+        self.session: D2SpySession = D2SpySession()
 
     def login(
         self, email: str, password: Optional[str] = None
-    ) -> Optional[requests.Session]:
+    ) -> Optional[D2SpySession]:
         """Login to D2S platform with email and password.
 
         Args:
@@ -35,7 +36,7 @@ class Auth:
             password Optional[str]: Password used to sign in to D2S.
 
         Returns:
-            Optional[requests.session]: Session with user access cookie.
+            Optional[D2SpySession]: Session with user access cookie.
         """
         # Request password from user if not provided to login method
         if not password:
@@ -46,7 +47,6 @@ class Auth:
         url = f"{self.base_url}/api/v1/auth/access-token"
         # Post credentials to access-token endpoint
         response = requests.post(url, data=credentials)
-        print(response.status_code == 200)
         # JWT access token returned for successful request
         if response.status_code == 200 and "access_token" in response.cookies:
             # Add JWT access token to session cookies
@@ -55,6 +55,9 @@ class Auth:
             user = self.get_current_user()
             # Return dictionary of user attributes and values
             if user:
+                # Check if user has api key and set it to session header if so
+                if hasattr(user, "api_access_token") and user.api_access_token:
+                    self.session.d2s_data = {"API_KEY": user.api_access_token}
                 return self.session
             else:
                 return None
@@ -82,7 +85,7 @@ class Auth:
         response = self.session.get(url)
         # Return user object if request successful
         if response.status_code == 200:
-            return response.json()
+            return User.from_dict(response.json())
         else:
             # Print response if request fails
             pretty_print_response(response)

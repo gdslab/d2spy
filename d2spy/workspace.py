@@ -1,4 +1,3 @@
-import requests
 from datetime import datetime
 from typing import Optional
 
@@ -7,12 +6,14 @@ from d2spy.api_client import APIClient
 from d2spy.auth import Auth
 from d2spy.extras.utils import ensure_dict, ensure_list_of_dict
 from d2spy.models.project_collection import ProjectCollection
+from d2spy.schemas.session import D2SpySession
 
 
 class Workspace:
     """Create and view projects on D2S instance."""
 
-    def __init__(self, base_url: str, session: requests.Session):
+    def __init__(self, base_url: str, session: D2SpySession, api_key: str = ""):
+        self.api_key = api_key
         self.base_url = base_url
         self.session = session
 
@@ -32,7 +33,13 @@ class Workspace:
         auth = Auth(base_url)
         auth.login(email=email)
 
-        return cls(base_url, auth.session)
+        # Set user api key if available
+        if hasattr(auth.session, "d2s_data"):
+            api_key = auth.session.d2s_data["API_KEY"]
+        else:
+            api_key = ""
+
+        return cls(base_url, auth.session, api_key)
 
     def logout(self) -> None:
         """Logout of D2S platform."""

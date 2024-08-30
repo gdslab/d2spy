@@ -4,6 +4,7 @@ from unittest.mock import patch, Mock
 import requests
 
 from d2spy.auth import Auth
+from example_data import TEST_USER
 
 
 class TestAuth(TestCase):
@@ -79,7 +80,7 @@ class TestAuth(TestCase):
             "is_approved": True,
             "id": "uuid-string",
             "created_at": "2024-08-29T13:49:55.191Z",
-            "api_access_token": "string",
+            "api_access_token": "abc123",
             "exts": [],
             "is_superuser": False,
             "profile_url": "https://example.com",
@@ -102,6 +103,12 @@ class TestAuth(TestCase):
 
         # Assert login returns session with access_token in cookies
         self.assertIsInstance(login_session, requests.Session)
+        self.assertTrue(hasattr(login_session, "d2s_data"))
+        self.assertIn("API_KEY", login_session.d2s_data)
+        self.assertEqual(
+            login_session.d2s_data["API_KEY"],
+            mock_get_login_response_data["api_access_token"],
+        )
         self.assertIn("access_token", login_session.cookies)
         self.assertEqual(
             login_session.cookies["access_token"],
@@ -136,6 +143,7 @@ class TestAuth(TestCase):
         # Mock the GET request that occurs after login
         mock_get_login_response = Mock()
         mock_get_login_response.status_code = 200
+        mock_get_login_response.json.return_value = TEST_USER
         mock_get_login.return_value = mock_get_login_response
 
         # Create an Auth instance and login

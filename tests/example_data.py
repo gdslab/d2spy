@@ -223,3 +223,17 @@ TEST_FEATURE_COLLECTION = [
         },
     },
 ]
+
+TEST_USER = {
+    "email": "d2suser@example.com",
+    "first_name": "string",
+    "last_name": "string",
+    "is_email_confirmed": True,
+    "is_approved": True,
+    "id": "dd18a0ea-d6fe-49e2-b16b-cb0faa7548b5",
+    "created_at": "2024-08-29T13:49:55.191Z",
+    "api_access_token": "abc123",
+    "exts": [],
+    "is_superuser": False,
+    "profile_url": "https://example.com",
+}

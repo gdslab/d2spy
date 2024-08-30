@@ -8,6 +8,7 @@ from d2spy.api_client import APIClient
 from d2spy.models.project import Project
 from d2spy.models.project_collection import ProjectCollection
 from d2spy.workspace import Workspace
+from example_data import TEST_USER
 
 
 class TestWorkspace(TestCase):
@@ -34,8 +35,13 @@ class TestWorkspace(TestCase):
         mock_getpass.return_value = user_password
 
         # Mock the GET request that occurs after login
+        mock_api_key = "abc123"
         mock_get_login_response = Mock()
         mock_get_login_response.status_code = 200
+        mock_get_login_response.json.return_value = {
+            **TEST_USER,
+            "api_access_key": mock_api_key,
+        }
         mock_get_login.return_value = mock_get_login_response
 
         # Connect to a workspace
@@ -47,6 +53,8 @@ class TestWorkspace(TestCase):
         self.assertIsInstance(workspace.session, Session)
         self.assertIn("access_token", workspace.session.cookies)
         self.assertIsInstance(workspace.client, APIClient)
+        self.assertIsInstance(workspace.api_key, str)
+        self.assertEqual(workspace.api_key, mock_api_key)
 
     @patch("d2spy.auth.requests.get")
     @patch("getpass.getpass")
@@ -73,6 +81,7 @@ class TestWorkspace(TestCase):
         # Mock the GET request that occurs after login
         mock_get_login_response = Mock()
         mock_get_login_response.status_code = 200
+        mock_get_login_response.json.return_value = TEST_USER
         mock_get_login.return_value = mock_get_login_response
 
         # Connect to a workspace
