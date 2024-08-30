@@ -38,9 +38,9 @@ class TestWorkspace(TestCase):
         mock_get_login_response.status_code = 200
         mock_get_login.return_value = mock_get_login_response
 
-        # Create workspace
+        # Connect to a workspace
         base_url = "https://example.com"
-        workspace = Workspace.create(base_url, user_email)
+        workspace = Workspace.connect(base_url, user_email)
 
         # Assert workspace has been properly initialized
         self.assertEqual(workspace.base_url, base_url)
@@ -75,9 +75,9 @@ class TestWorkspace(TestCase):
         mock_get_login_response.status_code = 200
         mock_get_login.return_value = mock_get_login_response
 
-        # Create workspace
+        # Connect to a workspace
         base_url = "https://example.com"
-        workspace = Workspace.create(base_url, user_email)
+        workspace = Workspace.connect(base_url, user_email)
 
         # Assert access token is in session after login
         self.assertIn("access_token", workspace.session.cookies)

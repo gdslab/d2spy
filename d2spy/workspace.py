@@ -19,7 +19,7 @@ class Workspace:
         self.client = APIClient(self.base_url, self.session)
 
     @classmethod
-    def create(cls, base_url: str, email: str) -> "Workspace":
+    def connect(cls, base_url: str, email: str) -> "Workspace":
         """Login and create workspace.
 
         Args:
