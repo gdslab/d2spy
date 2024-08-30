@@ -30,6 +30,8 @@ extra_css:
 
 theme:
   name: material
+  favicon: assets/favicon.ico
+  logo: assets/d2s-logo-with-text-white.png
   features:
     - navigation.instant
     - navigation.tabs

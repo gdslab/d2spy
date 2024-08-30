@@ -1,10 +1,11 @@
 # Welcome to Data to Science Python (d2spy)
 
+[![image](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/gdslab/d2spy/blob/master)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 <p align="center">
   <img
-    src="./assets/d2s-logo.png"
+    src="./assets/d2s-logo-with-text-black.png"
     alt="Data to Science logo"
     width="128"
 >
