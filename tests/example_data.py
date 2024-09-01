@@ -88,6 +88,69 @@ TEST_PROJECT = {
     "team_id": None,
 }
 
+# Example map layer response from API
+TEST_MAP_LAYER = {
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [-86.944517486, 41.444077837],
+                        [-86.944505515, 41.444077831],
+                        [-86.944505523, 41.444068823],
+                        [-86.944517494, 41.444068829],
+                        [-86.944517486, 41.444077837],
+                    ]
+                ],
+            },
+            "properties": {
+                "id": "6c8dc8a0-9523-4a53-a337-a71a16a33482",
+                "layer_name": "test_map_layer",
+                "layer_id": "yt2fNsLEFBE",
+                "properties": {"col": 1, "row": 1},
+                "is_active": True,
+                "project_id": "24f77778-08d4-47d6-86a6-c6e32848370f",
+                "flight_id": None,
+                "data_product_id": None,
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [-86.944493544, 41.444077825],
+                        [-86.944481573, 41.444077819],
+                        [-86.94448158, 41.444068812],
+                        [-86.944493551, 41.444068817],
+                        [-86.944493544, 41.444077825],
+                    ]
+                ],
+            },
+            "properties": {
+                "id": "8bfd643d-010f-4894-8bcb-7d3d95856974",
+                "layer_name": "test_map_layer",
+                "layer_id": "yt2fNsLEFBE",
+                "properties": {"col": 2, "row": 1},
+                "is_active": True,
+                "project_id": "24f77778-08d4-47d6-86a6-c6e32848370f",
+                "flight_id": None,
+                "data_product_id": None,
+            },
+        },
+    ],
+    "metadata": {
+        "preview_url": (
+            "http://localhost:8000/static/projects/24f77778-08d4-47d6-"
+            "86a6-c6e32848370f/vector/yt2fNsLEFBE/preview.png"
+        )
+    },
+}
+
 # Example project from mutli projects response from API
 TEST_MULTI_PROJECT = {
     "id": "24f77778-08d4-47d6-86a6-c6e32848370f",

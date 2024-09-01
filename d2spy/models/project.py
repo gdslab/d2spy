@@ -1,13 +1,13 @@
 import json
 from datetime import date, datetime
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, cast, Dict, List, Literal, Optional, Union
 from uuid import UUID
 
 from d2spy import models, schemas
 from d2spy.api_client import APIClient
 from d2spy.extras.utils import ensure_dict, ensure_list_of_dict
 from d2spy.models.flight_collection import FlightCollection
-from d2spy.schemas.geojson import ProjectBoundaryGeoJSON
+from d2spy.schemas.geojson import MapLayerFeatureCollection, ProjectBoundaryGeoJSON
 
 
 class Project:
@@ -86,6 +86,29 @@ class Project:
             self.client, **schemas.Flight.from_dict(response_data).__dict__
         )
         return flight
+
+    def add_map_layer(
+        self, layer_name: str, feature_collection: Dict[str, Any]
+    ) -> MapLayerFeatureCollection:
+        """Add vector map layer to a project.
+
+        Args:
+            layer_name (str): Name of map layer.
+            feature_collection (Dict[str, Any]): GeoJSON Feature Collection.
+
+        Returns:
+            MapLayerFeatureCollection: GeoJSON Feature Collection with D2S metadata.
+        """
+        endpoint = f"/api/v1/projects/{self.id}/vector_layers"
+
+        # vector layer data
+        data = {"layer_name": layer_name, "geojson": feature_collection}
+
+        # post vector layer data
+        response_data = self.client.make_post_request(endpoint, json=data)
+
+        # return feature collection of vector layer
+        return cast(MapLayerFeatureCollection, response_data)
 
     def get_flight(self, flight_id: str) -> Optional[models.Flight]:
         """Request single flight by ID. Flight must be active and viewable by user.

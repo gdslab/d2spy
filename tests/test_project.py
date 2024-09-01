@@ -10,7 +10,12 @@ from d2spy.models.flight import Flight
 from d2spy.models.flight_collection import FlightCollection
 from d2spy.models.project import Project
 
-from example_data import TEST_FEATURE_COLLECTION, TEST_MULTI_PROJECT, TEST_PROJECT
+from example_data import (
+    TEST_FEATURE_COLLECTION,
+    TEST_MAP_LAYER,
+    TEST_MULTI_PROJECT,
+    TEST_PROJECT,
+)
 
 
 class TestProject(TestCase):
@@ -297,6 +302,88 @@ class TestProject(TestCase):
 
         # Assert that the Project field attribute returns the project boundary
         self.assertEqual(project_boundary, TEST_PROJECT["field"])
+
+    @patch("d2spy.api_client.APIClient.make_post_request")
+    def test_add_map_layer(self, mock_make_post_request):
+        # Setup a test session
+        base_url = "https://example.com"
+        session = Session()
+        session.cookies.set("access_token", "fake_token")
+
+        # Instantiate APIClient with test URL and test session
+        client = APIClient(base_url, session)
+
+        # Test project data
+        project = Project(client, **TEST_PROJECT)
+        project_id = project.id
+
+        # Test map layer data - feature collection with two features
+        map_layer_name = "test_map_layer"
+        map_layer_feature_collection = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {"row": 1, "col": 1},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [
+                            [
+                                [-86.944517485972483, 41.444077836565455, 0.0],
+                                [-86.94450551488066, 41.444077830791521, 0.0],
+                                [-86.94450552255509, 41.444068823253602, 0.0],
+                                [-86.94451749364525, 41.444068829027536, 0.0],
+                                [-86.944517485972483, 41.444077836565455, 0.0],
+                            ]
+                        ],
+                    },
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"row": 1, "col": 2},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [
+                            [
+                                [-86.944493543788852, 41.444077825016343, 0.0],
+                                [-86.944481572697043, 41.444077819239929, 0.0],
+                                [-86.94448158037477, 41.44406881170201, 0.0],
+                                [-86.94449355146493, 41.444068817478424, 0.0],
+                                [-86.944493543788852, 41.444077825016343, 0.0],
+                            ]
+                        ],
+                    },
+                },
+            ],
+        }
+
+        # Mock response from the POST request for creating a new map layer
+        mock_response_data = TEST_MAP_LAYER
+        mock_make_post_request.return_value = mock_response_data
+
+        # Add map layer to project
+        response_feature_collection = project.add_map_layer(
+            feature_collection=map_layer_feature_collection, layer_name=map_layer_name
+        )
+
+        # Assert that the correct URL and JSON payload was used in the POST request
+        mock_make_post_request.assert_called_once_with(
+            f"/api/v1/projects/{project_id}/vector_layers",
+            json={
+                "layer_name": map_layer_name,
+                "geojson": map_layer_feature_collection,
+            },
+        )
+        print(response_feature_collection)
+        # Assert that the response data matches the test flight data
+        self.assertIsInstance(response_feature_collection, Dict)
+        self.assertIn("type", response_feature_collection)
+        self.assertEqual(response_feature_collection["type"], "FeatureCollection")
+        self.assertIn("features", response_feature_collection)
+        self.assertIsInstance(response_feature_collection["features"], List)
+        self.assertEqual(len(response_feature_collection["features"]), 2)
+        self.assertIn("metadata", response_feature_collection)
+        self.assertIn("preview_url", response_feature_collection["metadata"])
 
     @patch("d2spy.api_client.APIClient.make_get_request")
     def test_get_map_layers(self, mock_make_get_request):

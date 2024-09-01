@@ -28,3 +28,7 @@ class Feature(TypedDict):
 class FeatureCollection(TypedDict):
     type: Literal["FeatureCollection"]
     features: List[Feature]
+
+
+class MapLayerFeatureCollection(FeatureCollection):
+    metadata: Dict[str, Any]
