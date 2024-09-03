@@ -1,5 +1,6 @@
 import os
 import tempfile
+from pathlib import Path
 from typing import List
 from unittest import TestCase
 from unittest.mock import patch
@@ -17,8 +18,8 @@ from example_data import TEST_FLIGHT, TEST_PROJECT
 
 
 class TestFlight(TestCase):
-    @patch("requests.post")
-    def test_add_data_product(self, mock_post):
+    @patch("d2spy.extras.third_party.tusclient.client.TusClient")
+    def test_add_data_product(self, MockTusClient):
         # Setup a test session
         base_url = "https://example.com"
         session = Session()
@@ -30,16 +31,15 @@ class TestFlight(TestCase):
         # Test flight data
         flight = Flight(client, **TEST_FLIGHT)
 
-        # Create temporary file for the data product
+        # Create temporary file for the raw data
         with tempfile.NamedTemporaryFile(suffix=".tif") as temp_data_product:
-            # Test data product
-            data_type = "ortho"
+            data_type = "dsm"
             data_product = {"filepath": temp_data_product.name, "data_type": data_type}
 
             # Expected headers and cookies
             expected_cookies = {"access_token": client.session.cookies["access_token"]}
             expected_headers = {
-                "Tus-Resumable": "1.0.0",
+                # "Tus-Resumable": "1.0.0",
                 "X-Project-ID": "24f77778-08d4-47d6-86a6-c6e32848370f",
                 "X-Flight-ID": "b4eb23cc-3d36-4586-b11c-a0a95b00d245",
                 "X-Data-Type": data_type,
@@ -47,28 +47,46 @@ class TestFlight(TestCase):
                 "Origin": "https://example.com",
             }
 
-            # Mock response from the POST request
-            mock_post.return_value.status_code = 201
-            mock_post.return_value.headers = {"location": "/"}
+            chunk_size = 10 * 1024 * 1024  # 10 MiB
+
+            mock_tus_client = MockTusClient.return_value
+            mock_uploader = mock_tus_client.uploader.return_value
+            mock_uploader.get_file_size.return_value = chunk_size * 5  # 50 MiB
+            mock_uploader.offset = 0
+            mock_uploader.upload_chunk.return_value = None
+
+            # Increment the offset on each call to upload_chunk
+            def upload_chunk_side_effect():
+                if mock_uploader.offset < mock_uploader.get_file_size.return_value:
+                    mock_uploader.offset += chunk_size
+                if mock_uploader.offset >= mock_uploader.get_file_size.return_value:
+                    mock_uploader.offset = mock_uploader.get_file_size.return_value
+
+            mock_uploader.upload_chunk.side_effect = upload_chunk_side_effect
 
             # Upload data product to flight
             flight.add_data_product(**data_product)
 
-            # Assert that the correct URL, cookies, and headers were used
-            actual_url = mock_post.call_args[0][0]
-            self.assertEqual(actual_url, f"{base_url}/files")
+            MockTusClient.assert_called_once_with(f"{client.base_url}/files")
+            mock_tus_client.set_headers.assert_called_once_with(expected_headers)
+            mock_tus_client.set_cookies.assert_called_once_with(expected_cookies)
+            mock_tus_client.uploader.assert_called_once_with(
+                temp_data_product.name,
+                chunk_size=chunk_size,
+                metadata={
+                    "filename": Path(temp_data_product.name).name,
+                    "filetype": "image/tiff",
+                    "name": Path(temp_data_product.name).name,
+                    "relativePath": "null",
+                    "type": "image/tiff",
+                },
+            )
+            self.assertEqual(
+                mock_uploader.upload_chunk.call_count, 5
+            )  # 50 MiB / 10 MiB
 
-            self.assertIn("cookies", mock_post.call_args.kwargs)
-            actual_cookies = mock_post.call_args.kwargs["cookies"]
-            self.assertEqual(actual_cookies, expected_cookies)
-
-            self.assertIn("headers", mock_post.call_args.kwargs)
-            actual_headers = mock_post.call_args.kwargs["headers"]
-            for header in expected_headers:
-                self.assertEqual(actual_headers[header], expected_headers[header])
-
-    @patch("requests.post")
-    def test_add_raw_data(self, mock_post):
+    @patch("d2spy.extras.third_party.tusclient.client.TusClient")
+    def test_add_raw_data(self, MockTusClient):
         # Setup a test session
         base_url = "https://example.com"
         session = Session()
@@ -82,14 +100,13 @@ class TestFlight(TestCase):
 
         # Create temporary file for the raw data
         with tempfile.NamedTemporaryFile(suffix=".zip") as temp_raw_data:
-            # Test raw data
             data_type = "raw"
             raw_data = {"filepath": temp_raw_data.name}
 
             # Expected headers and cookies
             expected_cookies = {"access_token": client.session.cookies["access_token"]}
             expected_headers = {
-                "Tus-Resumable": "1.0.0",
+                # "Tus-Resumable": "1.0.0",
                 "X-Project-ID": "24f77778-08d4-47d6-86a6-c6e32848370f",
                 "X-Flight-ID": "b4eb23cc-3d36-4586-b11c-a0a95b00d245",
                 "X-Data-Type": data_type,
@@ -97,25 +114,43 @@ class TestFlight(TestCase):
                 "Origin": "https://example.com",
             }
 
-            # Mock response from the POST request
-            mock_post.return_value.status_code = 201
-            mock_post.return_value.headers = {"location": "/"}
+            chunk_size = 10 * 1024 * 1024  # 10 MiB
+
+            mock_tus_client = MockTusClient.return_value
+            mock_uploader = mock_tus_client.uploader.return_value
+            mock_uploader.get_file_size.return_value = chunk_size * 5  # 50 MiB
+            mock_uploader.offset = 0
+            mock_uploader.upload_chunk.return_value = None
+
+            # Increment the offset on each call to upload_chunk
+            def upload_chunk_side_effect():
+                if mock_uploader.offset < mock_uploader.get_file_size.return_value:
+                    mock_uploader.offset += chunk_size
+                if mock_uploader.offset >= mock_uploader.get_file_size.return_value:
+                    mock_uploader.offset = mock_uploader.get_file_size.return_value
+
+            mock_uploader.upload_chunk.side_effect = upload_chunk_side_effect
 
             # Upload data product to flight
             flight.add_raw_data(**raw_data)
 
-            # Assert that the correct URL, cookies, and headers were used
-            actual_url = mock_post.call_args[0][0]
-            self.assertEqual(actual_url, f"{base_url}/files")
-
-            self.assertIn("cookies", mock_post.call_args.kwargs)
-            actual_cookies = mock_post.call_args.kwargs["cookies"]
-            self.assertEqual(actual_cookies, expected_cookies)
-
-            self.assertIn("headers", mock_post.call_args.kwargs)
-            actual_headers = mock_post.call_args.kwargs["headers"]
-            for header in expected_headers:
-                self.assertEqual(actual_headers[header], expected_headers[header])
+            MockTusClient.assert_called_once_with(f"{client.base_url}/files")
+            mock_tus_client.set_headers.assert_called_once_with(expected_headers)
+            mock_tus_client.set_cookies.assert_called_once_with(expected_cookies)
+            mock_tus_client.uploader.assert_called_once_with(
+                temp_raw_data.name,
+                chunk_size=chunk_size,
+                metadata={
+                    "filename": Path(temp_raw_data.name).name,
+                    "filetype": "application/zip",
+                    "name": Path(temp_raw_data.name).name,
+                    "relativePath": "null",
+                    "type": "application/zip",
+                },
+            )
+            self.assertEqual(
+                mock_uploader.upload_chunk.call_count, 5
+            )  # 50 MiB / 10 MiB
 
     @patch("d2spy.api_client.APIClient.make_get_request")
     def test_get_data_products(self, mock_make_get_request):

@@ -80,11 +80,16 @@ class Flight:
         tus_client.set_headers(headers)
         tus_client.set_cookies(cookies)
         # create uploader for data product file with metadata
-        tus_uploader = tus_client.uploader(filepath, metadata=metadata)
-        # upload data product file
-        tus_uploader.upload()
-
-        print(f"{Path(filepath).name} uploaded")
+        chunk_size = 10 * 1024 * 1024  # 10 MiB
+        tus_uploader = tus_client.uploader(
+            filepath, chunk_size=chunk_size, metadata=metadata
+        )
+        # upload in chunks and print progress
+        file_size = tus_uploader.get_file_size()
+        while tus_uploader.offset < file_size:
+            tus_uploader.upload_chunk()
+            progress = (tus_uploader.offset / file_size) * 100
+            print(f"Upload progress: {progress:.2f}%", end="\r")
 
     def add_raw_data(self, filepath: str) -> None:
         """Uploads zipped raw data to D2S. After the upload finishes, the raw data may
@@ -121,11 +126,16 @@ class Flight:
         tus_client.set_headers(headers)
         tus_client.set_cookies(cookies)
         # create uploader for raw file with metadata
-        tus_uploader = tus_client.uploader(filepath, metadata=metadata)
-        # upload raw data file
-        tus_uploader.upload()
-
-        print(f"{Path(filepath).name} uploaded")
+        chunk_size = 10 * 1024 * 1024  # 10 MiB
+        tus_uploader = tus_client.uploader(
+            filepath, chunk_size=chunk_size, metadata=metadata
+        )
+        # upload in chunks and print progress
+        file_size = tus_uploader.get_file_size()
+        while tus_uploader.offset < file_size:
+            tus_uploader.upload_chunk()
+            progress = (tus_uploader.offset / file_size) * 100
+            print(f"Upload progress: {progress:.2f}%", end="\r")
 
     def get_data_products(self) -> DataProductCollection:
         """Return list of all active data products in a flight.
