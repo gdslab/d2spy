@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 
 # Example data product response from API
 TEST_DATA_PRODUCT = {
@@ -80,10 +80,10 @@ TEST_PROJECT = {
         },
     },
     "flight_count": 0,
-    "harvest_date": datetime.now(),
+    "harvest_date": date.today(),
     "is_active": True,
     "location_id": "3a3cd25-450a-48e5-86a8-55bb3fa54838",
-    "planting_date": datetime.now() - timedelta(days=90),
+    "planting_date": date.today() - timedelta(days=90),
     "role": "manager",
     "team_id": None,
 }

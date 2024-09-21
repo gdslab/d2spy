@@ -1,4 +1,5 @@
-from datetime import datetime
+import warnings
+from datetime import date
 from typing import Optional
 
 from d2spy import models, schemas
@@ -53,8 +54,10 @@ class Workspace:
         title: str,
         description: str,
         location: dict,
-        planting_date: Optional[datetime] = None,
-        harvest_date: Optional[datetime] = None,
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None,
+        planting_date: Optional[date] = None,  # Deprecated
+        harvest_date: Optional[date] = None,  # Deprecated
     ) -> models.Project:
         """Create new project in workspace.
 
@@ -62,22 +65,49 @@ class Workspace:
             title (str): Title for project.
             description (str): Description of project.
             location (dict): GeoJSON object representing location of project.
-            planting_date (Optional[datetime]): Planting date. Defaults to None.
-            harvest_date (Optional[datetime]): Harvest date. Defaults to None.
+            start_date (Optional[date]): Start date of project. Defaults to None.
+            end_date (Optional[date]): End date of project. Defaults to None.
+            planting_date (Optional[date]): Planting date. Defaults to None. Deprecated.
+            harvest_date (Optional[date]): Harvest date. Defaults to None. Deprecated.
 
         Returns:
             models.Project: New project instance.
         """
+        if planting_date:
+            warnings.warn(
+                "'planting_date' is deprecated and will be removed in future versions.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            start_date = start_date or planting_date
+
+        start_date_serialized = (
+            start_date.isoformat() if isinstance(start_date, date) else None
+        )
+
+        if harvest_date:
+            warnings.warn(
+                "'harvest_date' is deprecated and will be removed in future versions.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            end_date = end_date or harvest_date
+
+        end_date_serialized = (
+            end_date.isoformat() if isinstance(end_date, date) else None
+        )
+
         endpoint = "/api/v1/projects"
         data = {
             "title": title,
             "description": description,
             "location": location,
-            "planting_date": planting_date,
-            "harvest_date": harvest_date,
+            "planting_date": start_date_serialized,
+            "harvest_date": end_date_serialized,
         }
 
         response_data = self.client.make_post_request(endpoint, json=data)
+        print(response_data)
         project = schemas.Project.from_dict(response_data)
         return models.Project(self.client, **project.__dict__)
 

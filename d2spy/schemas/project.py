@@ -13,26 +13,40 @@ class Project:
     description: str
     field: ProjectBoundaryGeoJSON
     flight_count: int
-    harvest_date: Optional[date]
+    end_date: Optional[date]
     is_active: bool
     location_id: UUID
-    planting_date: Optional[date]
+    start_date: Optional[date]
     role: Literal["owner", "manager", "viewer"]
     team_id: Optional[UUID]
     title: str
 
     @classmethod
     def from_dict(cls, data: Dict[Any, Any]) -> "Project":
+        start_date = data.get("start_date") or data.get("planting_date")
+        start_date_deserialized = (
+            datetime.strptime(start_date, "%Y-%m-%d").date()
+            if isinstance(start_date, str)
+            else None
+        )
+
+        end_date = data.get("end_date") or data.get("harvest_date")
+        end_date_deserialized = (
+            datetime.strptime(end_date, "%Y-%m-%d").date()
+            if isinstance(end_date, str)
+            else None
+        )
+
         return cls(
             id=data["id"],
             deactivated_at=data["deactivated_at"],
             description=data["description"],
             field=data["field"],
             flight_count=data["flight_count"],
-            harvest_date=data["harvest_date"],
+            end_date=end_date_deserialized,
             is_active=data["is_active"],
             location_id=data["location_id"],
-            planting_date=data["planting_date"],
+            start_date=start_date_deserialized,
             role=data["role"],
             team_id=data["team_id"],
             title=data["title"],

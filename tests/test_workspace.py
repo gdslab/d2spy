@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import date, timedelta
 from unittest import TestCase
 from unittest.mock import patch, Mock
 
@@ -126,16 +126,16 @@ class TestWorkspace(TestCase):
                     ],
                 },
             },
-            "harvest_date": datetime.now(),
-            "planting_date": datetime.now() - timedelta(days=90),
+            "harvest_date": date.today(),
+            "planting_date": date.today() - timedelta(days=90),
         }
 
         # Mock response from the POST request to create new project
         mock_response_data = {
             "title": project_data["title"],
             "description": project_data["description"],
-            "planting_date": str(project_data["planting_date"]),
-            "harvest_date": str(project_data["harvest_date"]),
+            "start_date": str(project_data["planting_date"]),
+            "end_date": str(project_data["harvest_date"]),
             "location_id": "ad7aecdd-67d6-4fe5-b52b-52ba360f26aa",
             "team_id": None,
             "id": "24f77778-08d4-47d6-86a6-c6e32848370f",
@@ -161,15 +161,19 @@ class TestWorkspace(TestCase):
         # Assert that the correct URL and JSON payload was used in the POST request
         mock_make_post_request.assert_called_once_with(
             "/api/v1/projects",
-            json=project_data,
+            json={
+                **project_data,
+                "planting_date": project_data["planting_date"].isoformat(),
+                "harvest_date": project_data["harvest_date"].isoformat(),
+            },
         )
-
+        print(project)
         # Assert that the response data matches the test project data
         self.assertIsInstance(project, Project)
         self.assertEqual(project.title, project_data["title"])
         self.assertEqual(project.description, project_data["description"])
-        self.assertEqual(project.planting_date, str(project_data["planting_date"]))
-        self.assertEqual(project.harvest_date, str(project_data["harvest_date"]))
+        self.assertEqual(project.start_date, project_data["planting_date"])
+        self.assertEqual(project.end_date, project_data["harvest_date"])
 
     @patch("d2spy.api_client.APIClient.make_get_request")
     def test_get_project(self, mock_make_get_request):
@@ -200,8 +204,8 @@ class TestWorkspace(TestCase):
                     ],
                 },
             },
-            "harvest_date": datetime.now(),
-            "planting_date": datetime.now() - timedelta(days=90),
+            "harvest_date": date.today(),
+            "planting_date": date.today() - timedelta(days=90),
         }
         project_id = "24f77778-08d4-47d6-86a6-c6e32848370f"
 
@@ -209,8 +213,8 @@ class TestWorkspace(TestCase):
         mock_response_data = {
             "title": project_data["title"],
             "description": project_data["description"],
-            "planting_date": str(project_data["planting_date"]),
-            "harvest_date": str(project_data["harvest_date"]),
+            "start_date": str(project_data["planting_date"]),
+            "end_date": str(project_data["harvest_date"]),
             "location_id": "ad7aecdd-67d6-4fe5-b52b-52ba360f26aa",
             "team_id": None,
             "id": "24f77778-08d4-47d6-86a6-c6e32848370f",
@@ -240,8 +244,8 @@ class TestWorkspace(TestCase):
         self.assertIsInstance(project, Project)
         self.assertEqual(project.title, project_data["title"])
         self.assertEqual(project.description, project_data["description"])
-        self.assertEqual(project.planting_date, str(project_data["planting_date"]))
-        self.assertEqual(project.harvest_date, str(project_data["harvest_date"]))
+        self.assertEqual(project.start_date, project_data["planting_date"])
+        self.assertEqual(project.end_date, project_data["harvest_date"])
 
     @patch("d2spy.api_client.APIClient.make_get_request")
     def test_get_projects(self, mock_make_get_request):

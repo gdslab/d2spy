@@ -30,7 +30,17 @@ class Project:
         self.__dict__.update(kwargs)
 
     def __repr__(self):
-        return f"Project(title={self.title!r}, description={self.description!r})"
+        repr_str = f"Project(title={self.title!r}, description={self.description!r}"
+
+        if hasattr(self, "start_date") and self.start_date:
+            repr_str += f", start_date={self.start_date!r}"
+
+        if hasattr(self, "end_date") and self.end_date:
+            repr_str += f", end_date={self.end_date!r}"
+
+        repr_str += ")"
+
+        return repr_str
 
     def add_flight(
         self,
