@@ -8,3 +8,5 @@ The following guides demonstrate how **d2spy** can be used to interact with an i
 4. Visualizing your data products using leafmap ([notebook](./notebooks/04_visualizing_data_products_with_leafmap))
 5. Visualizing your projects using leafmap ([notebook](./notebooks/05_visualizing_projects_with_leafmap))
 6. Clipping a raster data project ([notebook](./notebooks/06_clipping_rasters_with_d2spy))
+7. 3DEP search by D2S projects ([notebook](./notebooks/07_3dep_search_by_d2s_projects))
+8. 3DEP search by polygon and clip with PDAL ([notebook](./notebooks/08_3dep_search_by_polygon_and_clip_with_pdal))
