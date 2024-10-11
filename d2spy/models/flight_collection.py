@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from difflib import SequenceMatcher
 from typing import List, Union
 
 from d2spy.models.flight import Flight
@@ -20,20 +21,37 @@ class FlightCollection:
         return f"FlightCollection({self.collection})"
 
     def filter_by_date(self, start_date: date, end_date: date) -> "FlightCollection":
-        """Returns list of flights with at least one flight within the date range.
+        """Returns collection of flights within the acquisition date range.
 
         Args:
             start_date (date): Starting date for the flight acquisition date range.
             end_date (date): Ending date for the flight acquisition date range.
 
         Returns:
-            List[Flight]: List of flights with a flight within the date range.
+            FlightCollection: Collection of flights within the acquisition date range.
         """
         filtered_collection = [
             flight
             for flight in self.collection
             if convert_from_str_to_date(flight.acquisition_date) >= start_date
             and convert_from_str_to_date(flight.acquisition_date) <= end_date
+        ]
+        return FlightCollection(collection=filtered_collection)
+
+    def filter_by_sensor(self, sensor: str, exact: bool = False) -> "FlightCollection":
+        """Returns collection of flights with specified sensor.
+
+        Args:
+            sensor (str): Sensor of interest.
+            exact (bool, optional): Must be exact match. Defaults to False.
+
+        Returns:
+            FlightCollection: Collection of flights with matching sensor.
+        """
+        filtered_collection = [
+            flight
+            for flight in self.collection
+            if is_match(sensor, flight.sensor, exact)
         ]
         return FlightCollection(collection=filtered_collection)
 
@@ -60,3 +78,21 @@ def convert_from_str_to_date(date_str: Union[date, str]) -> date:
             "Acquisition date string must be in %Y-%m-%d format."
         )
         raise (error)
+
+
+def is_match(a: str, b: str, exact: bool = False) -> bool:
+    """Case insensitive method that checks if "a" and "b" match or
+    match to within a degree of similarity (0.8).
+
+    Args:
+        a (str): User supplied string.
+        b (str): Internal string.
+        exact (bool, optional): True if must be exact match. Defaults to False.
+
+    Returns:
+       bool: True if "a" and "b" match.
+    """
+    if exact:
+        return a.lower() == b.lower()
+    else:
+        return SequenceMatcher(None, a.lower(), b.lower()).ratio() >= 0.8
