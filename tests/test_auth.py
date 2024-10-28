@@ -1,3 +1,4 @@
+import os
 from unittest import TestCase
 from unittest.mock import patch, Mock
 
@@ -98,6 +99,79 @@ class TestAuth(TestCase):
         mock_post.assert_called_once_with(
             f"{base_url}/api/v1/auth/access-token",
             data={"username": user_email, "password": user_password},
+        )
+        mock_get_login.assert_called_once_with(f"{base_url}/api/v1/users/current")
+
+        # Assert login returns session with access_token in cookies
+        self.assertIsInstance(login_session, requests.Session)
+        self.assertTrue(hasattr(login_session, "d2s_data"))
+        self.assertIn("API_KEY", login_session.d2s_data)
+        self.assertEqual(
+            login_session.d2s_data["API_KEY"],
+            mock_get_login_response_data["api_access_token"],
+        )
+        self.assertIn("access_token", login_session.cookies)
+        self.assertEqual(
+            login_session.cookies["access_token"],
+            mock_post_response.cookies["access_token"],
+        )
+
+    @patch("d2spy.auth.requests.get")
+    @patch("getpass.getpass")
+    @patch("d2spy.auth.requests.post")
+    @patch("d2spy.auth.requests.Session.get")
+    def test_login_with_environment_variables_and_get_current_user(
+        self, mock_get_login, mock_post, mock_getpass, mock_get_init
+    ):
+        # Valid D2S URL
+        base_url = "https://valid-d2s-url.org"
+
+        # Mock the GET request that occurs when Auth is initialized
+        mock_get_init_response = Mock()
+        mock_get_init_response.status_code = 200
+        mock_get_init.return_value = mock_get_init_response
+
+        # Mock the POST request that occurs during login
+        mock_post_response = Mock()
+        mock_post_response.cookies = {"access_token": "fake_token"}
+        mock_post_response.status_code = 200
+        mock_post.return_value = mock_post_response
+
+        # Set email and password as environment variables
+        os.environ["D2S_EMAIL"] = "user@example.com"
+        os.environ["D2S_PASSWORD"] = "userpassword"
+
+        # Mock the GET request that occurs after login
+        mock_get_login_response = Mock()
+        mock_get_login_response_data = {
+            "email": os.environ.get("D2S_EMAIL"),
+            "first_name": "string",
+            "last_name": "string",
+            "is_email_confirmed": True,
+            "is_approved": True,
+            "id": "uuid-string",
+            "created_at": "2024-08-29T13:49:55.191Z",
+            "api_access_token": "abc123",
+            "exts": [],
+            "is_superuser": False,
+            "profile_url": "https://example.com",
+        }
+        mock_get_login_response.status_code = 200
+        mock_get_login_response.json.return_value = mock_get_login_response_data
+        mock_get_login.return_value = mock_get_login_response
+
+        # Create an Auth instance and login
+        auth = Auth(base_url)
+        login_session = auth.login()
+
+        # Assert that the correct URLs were called
+        mock_get_init.assert_called_once_with(f"{base_url}/api/v1/health")
+        mock_post.assert_called_once_with(
+            f"{base_url}/api/v1/auth/access-token",
+            data={
+                "username": os.environ.get("D2S_EMAIL"),
+                "password": os.environ.get("D2S_PASSWORD"),
+            },
         )
         mock_get_login.assert_called_once_with(f"{base_url}/api/v1/users/current")
 

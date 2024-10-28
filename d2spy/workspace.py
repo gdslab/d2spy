@@ -1,3 +1,4 @@
+import os
 import warnings
 from datetime import date
 from typing import Optional
@@ -21,17 +22,29 @@ class Workspace:
         self.client = APIClient(self.base_url, self.session)
 
     @classmethod
-    def connect(cls, base_url: str, email: str) -> "Workspace":
-        """Login and create workspace.
+    def connect(cls, base_url: str, email: Optional[str] = None) -> "Workspace":
+        """Login and create workspace. If the email argument is not provided, the
+        method will use the value of the D2S_EMAIL environment variable. If neither is
+        available, an exception will be thrown.
 
         Args:
             base_url (str): Base URL for D2S instance.
-            email (str): Email address used to sign in to D2S.
+            email Optional[str]: Email address used to sign in to D2S.
 
         Returns:
             Workspace: D2S workspace for creating and viewing data.
         """
         auth = Auth(base_url)
+
+        # Check for email environment variable if not provided as argument
+        if not email:
+            email = os.environ.get("D2S_EMAIL")
+            if not email:
+                raise ValueError(
+                    "Must provide 'email' to login method as argument or set email as "
+                    "environment variable 'D2S_EMAIL'"
+                )
+
         auth.login(email=email)
 
         # Set user api key if available

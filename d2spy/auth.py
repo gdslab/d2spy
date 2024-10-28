@@ -1,4 +1,5 @@
 import getpass
+import os
 import requests
 from typing import Optional
 
@@ -27,20 +28,34 @@ class Auth:
         self.session: D2SpySession = D2SpySession()
 
     def login(
-        self, email: str, password: Optional[str] = None
+        self, email: Optional[str] = None, password: Optional[str] = None
     ) -> Optional[D2SpySession]:
-        """Login to D2S platform with email and password.
+        """Login to D2S platform with email and password. Alternatively, use
+        environment variables 'D2S_EMAIL' and 'D2S_PASSWORD' to set email and password.
+        If the password is not passed as an argument and 'D2S_PASSWORD' is not set,
+        `getpass` will be used to prompt user for password.
 
         Args:
-            email (str): Email address used to sign in to D2S.
+            email Optional[str]: Email address used to sign in to D2S.
             password Optional[str]: Password used to sign in to D2S.
 
         Returns:
             Optional[D2SpySession]: Session with user access cookie.
         """
-        # Request password from user if not provided to login method
+        # Check for email environment variable if not provided as argument
+        if not email:
+            email = os.environ.get("D2S_EMAIL")
+            if not email:
+                raise ValueError(
+                    "Must provide 'email' to login method as argument or set email "
+                    "as environment variable 'D2S_EMAIL'"
+                )
+        # Check for password environment variable if not provided as argument
         if not password:
-            password = getpass.getpass(prompt="Enter your D2S password:")
+            password = os.environ.get("D2S_PASSWORD")
+            # Request password from user if not set as environment variable
+            if not password:
+                password = getpass.getpass(prompt="Enter your D2S password:")
         # Credentials that will be sent to D2S auth API
         credentials = {"username": email, "password": password}
         # URL for D2S access-token endpoint
