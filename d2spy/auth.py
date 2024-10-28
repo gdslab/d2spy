@@ -31,8 +31,8 @@ class Auth:
         self, email: Optional[str] = None, password: Optional[str] = None
     ) -> Optional[D2SpySession]:
         """Login to D2S platform with email and password. Alternatively, use
-        environment variables 'D2S_EMAIL' and 'D2S_PASSWORD' to set email and password.
-        If the password is not passed as an argument and 'D2S_PASSWORD' is not set,
+        environment variables `D2S_EMAIL` and `D2S_PASSWORD` to set email and password.
+        If the password is not passed as an argument and `D2S_PASSWORD` is not set,
         `getpass` will be used to prompt user for password.
 
         Args:
