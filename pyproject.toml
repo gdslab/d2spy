@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "d2spy"
-version = "0.1.14"
+version = "0.1.15"
 license = "MIT License"
 description = "Python package for interacting with a Data to Science instance."
 authors = ["Ben Hancock <hancocb@purdue.edu>"]

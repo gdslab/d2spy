@@ -178,7 +178,9 @@ class Project:
             List[Dict[Any, Any]]: List of GeoJSON FeatureCollections.
         """
         endpoint = f"/api/v1/projects/{self.id}/vector_layers"
-        response_data = self.client.make_get_request(endpoint)
+        response_data = self.client.make_get_request(
+            endpoint, params={"format": "json"}
+        )
         response_data = ensure_list_of_dict(response_data)
         return response_data
 
