@@ -7,9 +7,10 @@ from uuid import UUID
 
 from d2spy import models, schemas
 from d2spy.api_client import APIClient
+from d2spy.extras.third_party.tusclient import client as tusc
+from d2spy.extras.utils import ensure_dict
 from d2spy.models.data_product import DataProduct
 from d2spy.models.data_product_collection import DataProductCollection
-from d2spy.extras.third_party.tusclient import client as tusc
 
 
 class Flight:
@@ -136,6 +137,23 @@ class Flight:
             tus_uploader.upload_chunk()
             progress = (tus_uploader.offset / file_size) * 100
             print(f"Upload progress: {progress:.2f}%", end="\r")
+
+    def get_data_product(self, data_product_id: str) -> Optional[DataProduct]:
+        """Request single data product by ID. Data product must be active
+        and viewable by user.
+
+        Args:
+            data_product_id (str): Data product ID.
+
+        Returns:
+            Optional[models.DataProduct]: Data product ID or None.
+        """
+        endpoint = f"/api/v1/projects/{self.project_id}/flights/{self.id}"
+        endpoint += f"/data_products/{data_product_id}"
+        response_data = self.client.make_get_request(endpoint)
+        response_data = ensure_dict(response_data)
+        data_product = schemas.DataProduct.from_dict(response_data)
+        return models.DataProduct(self.client, **data_product.__dict__)
 
     def get_data_products(self) -> DataProductCollection:
         """Return list of all active data products in a flight.

@@ -57,9 +57,16 @@ class APIClient:
         url = self.base_url + endpoint
         response = self.session.post(url, **kwargs)
 
-        if response.status_code != 200 and response.status_code != 201:
+        if (
+            response.status_code != 200
+            and response.status_code != 201
+            and response.status_code != 202
+        ):
             pretty_print_response(response)
             response.raise_for_status()
+
+        if response.status_code == 202:
+            return {"status": "accepted"}
 
         return response.json()
 
