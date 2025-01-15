@@ -63,17 +63,35 @@ class MultiProject:
     id: UUID
     centroid: Centroid
     description: str
+    end_date: Optional[date]
     flight_count: int
     role: Literal["owner", "manager", "viewer"]
+    start_date: Optional[date]
     title: str
 
     @classmethod
     def from_dict(cls, data: dict) -> "MultiProject":
+        start_date = data.get("start_date") or data.get("planting_date")
+        start_date_deserialized = (
+            datetime.strptime(start_date, "%Y-%m-%d").date()
+            if isinstance(start_date, str)
+            else None
+        )
+
+        end_date = data.get("end_date") or data.get("harvest_date")
+        end_date_deserialized = (
+            datetime.strptime(end_date, "%Y-%m-%d").date()
+            if isinstance(end_date, str)
+            else None
+        )
+
         return cls(
             id=data["id"],
             centroid=data["centroid"],
             description=data["description"],
+            end_date=end_date_deserialized,
             flight_count=data["flight_count"],
             role=data["role"],
+            start_date=start_date_deserialized,
             title=data["title"],
         )

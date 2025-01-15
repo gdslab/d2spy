@@ -120,7 +120,6 @@ class Workspace:
         }
 
         response_data = self.client.make_post_request(endpoint, json=data)
-        print(response_data)
         project = schemas.Project.from_dict(response_data)
         return models.Project(self.client, **project.__dict__)
 
