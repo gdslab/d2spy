@@ -113,6 +113,7 @@ class Flight:
             "X-Data-Type": "raw",
             "Accept-Language": "en-US,en;q=0.5",
             "Origin": self.client.base_url,
+            "Connection": "keep-alive",
         }
         # metadata about raw data file
         metadata = {
