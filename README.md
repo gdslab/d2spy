@@ -1,5 +1,7 @@
 # Welcome to Data to Science Python (d2spy)
 
+[![image](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/gdslab/d2spy/blob/master)
+[![Jupyter Notebook](https://img.shields.io/badge/Open%20in%20JuypterHub%20-%20%233776AB?logo=jupyter&logoColor=%23F37626&labelColor=%23F5F5F5)](https://lab.d2s.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 <p align="center">
