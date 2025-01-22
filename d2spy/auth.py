@@ -28,7 +28,10 @@ class Auth:
         self.session: D2SpySession = D2SpySession()
 
     def login(
-        self, email: Optional[str] = None, password: Optional[str] = None
+        self,
+        email: Optional[str] = None,
+        password: Optional[str] = None,
+        skip_env: bool = False,
     ) -> Optional[D2SpySession]:
         """Login to D2S platform with email and password. Alternatively, use
         environment variables `D2S_EMAIL` and `D2S_PASSWORD` to set email and password.
@@ -38,6 +41,7 @@ class Auth:
         Args:
             email Optional[str]: Email address used to sign in to D2S.
             password Optional[str]: Password used to sign in to D2S.
+            skip_env bool: Skip checking environment variables for password.
 
         Returns:
             Optional[D2SpySession]: Session with user access cookie.
@@ -54,7 +58,7 @@ class Auth:
         if not password:
             password = os.environ.get("D2S_PASSWORD")
             # Request password from user if not set as environment variable
-            if not password:
+            if not password or (password and skip_env):
                 password = getpass.getpass(prompt="Enter your D2S password:")
         # Credentials that will be sent to D2S auth API
         credentials = {"username": email, "password": password}
@@ -76,6 +80,9 @@ class Auth:
                 return self.session
             else:
                 return None
+        elif response.status_code == 401:
+            self.login(email, password=None, skip_env=True)
+            return None
         else:
             # Print response if request fails
             pretty_print_response(response)
