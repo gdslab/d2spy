@@ -111,9 +111,11 @@ class Flight:
             "X-Project-ID": str(self.project_id),
             "X-Flight-ID": str(self.id),
             "X-Data-Type": "raw",
+            "Accept": "*/*",
+            "Accept-Encoding": "gzip, deflate, br, zstd",
             "Accept-Language": "en-US,en;q=0.5",
-            "Origin": self.client.base_url,
             "Connection": "keep-alive",
+            "Origin": self.client.base_url,
         }
         # metadata about raw data file
         metadata = {
