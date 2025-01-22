@@ -6,6 +6,7 @@ from uuid import UUID
 
 from rasterio.errors import RasterioIOError
 
+from d2spy import models, schemas
 from d2spy.api_client import APIClient
 from d2spy.extras.utils import clip_by_mask
 from d2spy.schemas.stac_properties import STACProperties, STACEOProperties
@@ -104,6 +105,53 @@ class DataProduct:
             return None
 
         return eo_properties
+
+    def update_band_info(
+        self, band_info: List[STACEOProperties]
+    ) -> Optional[List[STACEOProperties]]:
+        """Update current band description information. Only the "description"
+        values may be updated. The "name" values must remain the same. You do
+        not need to include all bands in `band_info`, only the ones you wish to
+        update.
+
+        Args:
+            band_info (List[STACEOProperties]): Band info with new descriptions.
+
+        Returns:
+            Optional[List[STACEOProperties]]: Updated band info.
+        """
+        # Match project ID from data product's URL
+        match = re.search(r"/projects/([a-f0-9\-]+)/", self.url)
+
+        # Extract matched project ID
+        if match:
+            project_id = match.group(1)
+        else:
+            print("Unable to find project ID associated with data product")
+            return None
+
+        # Prepare endpoint for put request
+        endpoint = f"/api/v1/projects/{project_id}/flights/{self.flight_id}"
+        endpoint += f"/data_products/{self.id}/bands"
+
+        # Construct payload
+        data = {"bands": band_info}
+
+        # Put form data
+        response_data = self.client.make_put_request(endpoint, json=data)
+
+        # Create the updated_data_product dictionary
+        updated_data_product = schemas.DataProduct.from_dict(response_data).__dict__
+
+        # Update the attributes of self
+        for key, value in updated_data_product.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+            else:
+                print(f"Warning: Attribute '{key}' not found in DataProduct class.")
+
+        # Create new DataProduct and return updated band info
+        return models.DataProduct(self.client, **updated_data_product).get_band_info()
 
     def derive_ndvi(self, red_band_idx: int, nir_band_idx: int) -> bool:
         """Use data product's bands to derive a new NDVI data product. Must provide
