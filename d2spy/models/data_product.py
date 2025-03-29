@@ -24,6 +24,10 @@ class DataProduct:
     stac_properties: STACProperties
     status: str
     url: str
+    # Optional fields for additional metadata
+    bbox: Optional[List[float]] = None
+    crs: Optional[Dict] = None
+    resolution: Optional[Dict] = None
 
     def __init__(self, client: APIClient, **kwargs):
         self.client = client
@@ -37,7 +41,8 @@ class DataProduct:
             f"original_filename={self.original_filename!r}, "
             f"is_active={self.is_active!r}, public={self.public!r}, "
             f"stac_properties={self.stac_properties!r}, status={self.status!r}, "
-            f"url={self.url!r})"
+            f"url={self.url!r}, bbox={self.bbox!r}, crs={self.crs!r}, "
+            f"resolution={self.resolution!r})"
         )
 
     def clip(self, geojson_feature: Dict[Any, Any], out_raster: str) -> bool:
