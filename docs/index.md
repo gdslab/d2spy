@@ -8,7 +8,7 @@
   <img
     src="./assets/d2s-logo-blue.png"
     alt="Data to Science logo"
-    width="128"
+    width="256"
 >
 
 </p>
