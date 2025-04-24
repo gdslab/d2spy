@@ -6,7 +6,7 @@
 
 <p align="center">
   <img
-    src="./assets/d2s-logo-with-text-black.png"
+    src="./assets/d2s-logo-blue.png"
     alt="Data to Science logo"
     width="128"
 >
@@ -29,3 +29,7 @@ Install **d2spy** from PyPi by running:
 ```python
 pip install d2spy
 ```
+
+## Learn more
+
+👉 **Visit the [official D2S homepage](https://d2s.org) to learn more.**
