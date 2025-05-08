@@ -67,15 +67,18 @@ class DataProduct:
             if str(e) == "HTTP response code: 401":
                 if os.environ.get("D2S_API_KEY"):
                     try:
+                        url_with_key = (
+                            self.url + "?API_KEY=" + os.environ["D2S_API_KEY"]
+                        )
                         clip_by_mask(
-                            self.url + "?API_KEY=" + os.environ["D2S_API_KEY"],
+                            url_with_key,
                             geojson_feature,
                             out_raster,
                         )
                         print("Raster clipped successfully")
                         return True
                     except RasterioIOError as e2:
-                        if str(e) == "HTTP response code: 401":
+                        if str(e2) == "HTTP response code: 401":
                             print("You do not have permission to access this raster")
                             return False
                         else:
