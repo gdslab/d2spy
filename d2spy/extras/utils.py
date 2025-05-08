@@ -20,7 +20,7 @@ http_status_lookup = {status.value: status.name for status in list(HTTPStatus)}
 
 
 def ensure_dict(
-    response_data: Union[Dict[Any, Any], List[Dict[Any, Any]]]
+    response_data: Union[Dict[Any, Any], List[Dict[Any, Any]]],
 ) -> Dict[Any, Any]:
     """Verifies that the API response data is a dictionary before returning it.
 
@@ -39,7 +39,7 @@ def ensure_dict(
 
 
 def ensure_list_of_dict(
-    response_data: Union[Dict[Any, Any], List[Dict[Any, Any]]]
+    response_data: Union[Dict[Any, Any], List[Dict[Any, Any]]],
 ) -> List[Dict[Any, Any]]:
     """Verifies that the API response data is a list of dictionaries or
     empty list before returning it.
@@ -73,7 +73,7 @@ def pretty_print_response(response: Response):
 
 
 def validate_geojson_polygon_feature(
-    geojson_data: Dict[Any, Any]
+    geojson_data: Dict[Any, Any],
 ) -> Feature[Polygon, Dict[Any, Any]]:
     """Returns GeoJSON Polygon Feature or raises exception if unable to validate.
 
@@ -104,6 +104,11 @@ def clip_by_mask(in_raster: str, geojson: Dict[Any, Any], out_raster: str) -> No
     feature = validate_geojson_polygon_feature(geojson)
     assert feature.geometry
 
+    if not os.path.exists(os.path.dirname(out_raster)):
+        # Try to create the directory
+        os.makedirs(os.path.dirname(out_raster), exist_ok=True)
+
+    # If it still doesn't exist, raise an error
     if not os.path.exists(os.path.dirname(out_raster)):
         raise FileNotFoundError("directory for output raster does not exist")
 
