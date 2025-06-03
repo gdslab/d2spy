@@ -255,7 +255,7 @@ def get_metadata_filetype(filepath: str) -> str:
 
 def validate_file_extension_and_data_type(filepath: str, data_type: str) -> None:
     """Checks if file extension is recognized and raises errors if file extension
-    and data type are not compatible.
+    and data type are not compatible. Data type must be less than 16 characters.
 
     Args:
         filepath (str): Full path to data product.
@@ -265,6 +265,7 @@ def validate_file_extension_and_data_type(filepath: str, data_type: str) -> None
         ValueError: Raised if data type is point cloud and file ext. is tif.
         ValueError: Raised if data type is not point cloud and file ext. is las/laz.
         ValueError: Raised if file ext. is not supported.
+        ValueError: Raised if data type is greater than 16 characters.
     """
     ext = Path(filepath).suffix
 
@@ -279,6 +280,9 @@ def validate_file_extension_and_data_type(filepath: str, data_type: str) -> None
 
     if ext != ".tif" and ext != ".las" and ext != ".laz":
         raise ValueError("Unrecognized file extension for data product")
+
+    if len(data_type) > 16:
+        raise ValueError("Data type must be less than 16 characters")
 
 
 def validate_file_extension_for_raw_data(filepath: str) -> None:

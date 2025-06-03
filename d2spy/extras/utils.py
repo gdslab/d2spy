@@ -1,5 +1,7 @@
 import json
 import os
+import shutil
+import subprocess
 import tempfile
 from http import HTTPStatus
 from pathlib import Path
@@ -15,8 +17,12 @@ from geojson_pydantic import Feature, Polygon
 from requests import Response
 from shapely.geometry import shape
 
+from d2spy.utils.logging_config import get_logger
 
 http_status_lookup = {status.value: status.name for status in list(HTTPStatus)}
+
+# Set up logger
+logger = get_logger(__name__)
 
 
 def ensure_dict(
@@ -62,6 +68,10 @@ def ensure_list_of_dict(
     return response_data
 
 
+def is_gdal_available():
+    return shutil.which("gdalbuildvrt") is not None
+
+
 def pretty_print_response(response: Response):
     """Pretty prints an API response's status code and message.
 
@@ -100,7 +110,9 @@ def validate_geojson_polygon_feature(
         raise ValueError(f"Invalid GeoJSON Feature - {e}")
 
 
-def clip_by_mask(in_raster: str, geojson: Dict[Any, Any], out_raster: str) -> None:
+def clip_by_mask(
+    in_raster: str, geojson: Dict[Any, Any], out_raster: str, export_vrt: bool = False
+) -> None:
     feature = validate_geojson_polygon_feature(geojson)
     assert feature.geometry
 
@@ -146,6 +158,19 @@ def clip_by_mask(in_raster: str, geojson: Dict[Any, Any], out_raster: str) -> No
         # Write clipped raster to disk
         with rasterio.open(out_raster, "w", **meta) as clipped_dataset:
             clipped_dataset.write(mask_raster)
+            logger.info("Raster clipped successfully")
+
+        # Export VRT file
+        if export_vrt:
+            if is_gdal_available():
+                cmd = ["gdalbuildvrt", out_raster.replace(".tif", ".vrt")] + [in_raster]
+                try:
+                    subprocess.run(cmd, check=True)
+                    logger.info("VRT file exported successfully")
+                except subprocess.CalledProcessError as e:
+                    logger.warning(f"Error exporting VRT file: {e}")
+            else:
+                logger.warning("GDAL is not available. Unable to export VRT file.")
 
 
 def find_files(folder: str, types: List[str]) -> List[str]:

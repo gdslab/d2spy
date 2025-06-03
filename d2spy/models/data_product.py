@@ -10,6 +10,9 @@ from d2spy import models, schemas
 from d2spy.api_client import APIClient
 from d2spy.extras.utils import clip_by_mask
 from d2spy.schemas.stac_properties import STACProperties, STACEOProperties
+from d2spy.utils.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 class DataProduct:
@@ -45,23 +48,25 @@ class DataProduct:
             f"resolution={self.resolution!r})"
         )
 
-    def clip(self, geojson_feature: Dict[Any, Any], out_raster: str) -> bool:
+    def clip(
+        self, geojson_feature: Dict[Any, Any], out_raster: str, export_vrt: bool = False
+    ) -> bool:
         """Clips data product by GeoJSON Polygon Feature.
 
         Args:
             geojson_feature (Dict[Any, Any]): GeoJSON Polygon Feature.
             out_raster (str): Path for output raster.
+            export_vrt (bool): Export VRT file.
 
         Returns:
             bool: True if successful. False if clip fails.
         """
         if self.data_type == "point_cloud":
-            print("Not available for point clouds")
+            logger.error("Not available for point clouds")
             return False
 
         try:
-            clip_by_mask(self.url, geojson_feature, out_raster)
-            print("Raster clipped successfully")
+            clip_by_mask(self.url, geojson_feature, out_raster, export_vrt)
             return True
         except RasterioIOError as e:
             if str(e) == "HTTP response code: 401":
@@ -74,22 +79,26 @@ class DataProduct:
                             url_with_key,
                             geojson_feature,
                             out_raster,
+                            export_vrt,
                         )
-                        print("Raster clipped successfully")
                         return True
                     except RasterioIOError as e2:
                         if str(e2) == "HTTP response code: 401":
-                            print("You do not have permission to access this raster")
+                            logger.error(
+                                "You do not have permission to access this raster"
+                            )
                             return False
                         else:
                             raise e2
                 else:
-                    print("Set the 'D2S_API_KEY' environment variable before clipping")
+                    logger.error(
+                        "Set the 'D2S_API_KEY' environment variable before clipping"
+                    )
                     return False
             else:
                 raise e
         except Exception as e:
-            print(f"Failed to clip raster: {e}")
+            logger.error(f"Failed to clip raster: {e}")
             return False
 
     def get_band_info(self) -> Optional[List[STACEOProperties]]:
@@ -99,17 +108,17 @@ class DataProduct:
             Optional[List[STACEOProperties]]: _description_
         """
         if self.data_type == "point_cloud":
-            print("Point cloud does not have band info")
+            logger.error("Point cloud does not have band info")
             return None
 
         if not self.stac_properties.get("eo"):
-            print("Missing band properties")
+            logger.error("Missing band properties")
             return None
 
         eo_properties = self.stac_properties["eo"]
 
         if not isinstance(eo_properties, List):
-            print("Band properties in unexpected format")
+            logger.error("Band properties in unexpected format")
             return None
 
         return eo_properties
@@ -135,7 +144,7 @@ class DataProduct:
         if match:
             project_id = match.group(1)
         else:
-            print("Unable to find project ID associated with data product")
+            logger.error("Unable to find project ID associated with data product")
             return None
 
         # Prepare endpoint for put request
@@ -156,7 +165,9 @@ class DataProduct:
             if hasattr(self, key):
                 setattr(self, key, value)
             else:
-                print(f"Warning: Attribute '{key}' not found in DataProduct class.")
+                logger.warning(
+                    f"Warning: Attribute '{key}' not found in DataProduct class."
+                )
 
         # Create new DataProduct and return updated band info
         return models.DataProduct(self.client, **updated_data_product).get_band_info()
@@ -174,7 +185,7 @@ class DataProduct:
         """
         # Check if this is a raster data product
         if self.data_type == "point_cloud":
-            print("Not available for point clouds")
+            logger.error("Not available for point clouds")
             return False
 
         # Get band properties from STAC EO extension
@@ -182,21 +193,21 @@ class DataProduct:
 
         # Check if the data product has at least two bands
         if not isinstance(eo_properties, List) or len(eo_properties) < 2:
-            print("Data product must have at least two bands - Red and NIR")
-            print(eo_properties)
+            logger.error("Data product must have at least two bands - Red and NIR")
+            logger.error(eo_properties)
             return False
 
         # Reject if the red band index and NIR band index are the same
         if red_band_idx == nir_band_idx:
-            print("Red band index and NIR band index cannot be the same")
+            logger.error("Red band index and NIR band index cannot be the same")
 
         # Reject if the red band is outside of the range of possible bands
         if red_band_idx + 1 > len(eo_properties) or red_band_idx < 1:
-            print("Red band index outside the range of available bands")
+            logger.error("Red band index outside the range of available bands")
 
         # Reject if the NIR band is outside of the range of possible bands
         if nir_band_idx + 1 > len(eo_properties) or nir_band_idx < 1:
-            print("NIR band index outside the range of available bands")
+            logger.error("NIR band index outside the range of available bands")
 
         # Prepare payload for post request
         data = {
@@ -219,7 +230,7 @@ class DataProduct:
         if match:
             project_id = match.group(1)
         else:
-            print("Unable to find project ID associated with data product")
+            logger.error("Unable to find project ID associated with data product")
             return False
 
         # Prepare endpoint for post request
@@ -229,7 +240,7 @@ class DataProduct:
         # post form data
         self.client.make_post_request(endpoint, json=data)
 
-        print("Job request has been added to the queue")
+        logger.info("Job request has been added to the queue")
 
         return True
 
@@ -249,7 +260,7 @@ class DataProduct:
         """
         # Check if this is a raster data product
         if self.data_type == "point_cloud":
-            print("Not available for point clouds")
+            logger.error("Not available for point clouds")
             return False
 
         # Get band properties from STAC EO extension
@@ -257,25 +268,27 @@ class DataProduct:
 
         # Check if the data product has at least two bands
         if not isinstance(eo_properties, List) or len(eo_properties) < 3:
-            print("Data product must have at least three bands - Red, Green, and Blue")
-            print(eo_properties)
+            logger.error(
+                "Data product must have at least three bands - Red, Green, and Blue"
+            )
+            logger.error(eo_properties)
             return False
 
         # Reject if any of the band indexes are the same
         if len({red_band_idx, green_band_idx, blue_band_idx}) < 3:
-            print("Each band index must be unique")
+            logger.error("Each band index must be unique")
 
         # Reject if the red band is outside of the range of possible bands
         if red_band_idx + 1 > len(eo_properties) or red_band_idx < 1:
-            print("Red band index outside the range of available bands")
+            logger.error("Red band index outside the range of available bands")
 
         # Reject if the green band is outside of the range of possible bands
         if green_band_idx + 1 > len(eo_properties) or green_band_idx < 1:
-            print("Green band index outside the range of available bands")
+            logger.error("Green band index outside the range of available bands")
 
         # Reject if the blue band is outside of the range of possible bands
         if blue_band_idx + 1 > len(eo_properties) or blue_band_idx < 1:
-            print("Blue band index outside the range of available bands")
+            logger.error("Blue band index outside the range of available bands")
 
         # Prepare payload for post request
         data = {
@@ -298,7 +311,7 @@ class DataProduct:
         if match:
             project_id = match.group(1)
         else:
-            print("Unable to find project ID associated with data product")
+            logger.error("Unable to find project ID associated with data product")
             return False
 
         # Prepare endpoint for post request
@@ -308,6 +321,6 @@ class DataProduct:
         # post form data
         self.client.make_post_request(endpoint, json=data)
 
-        print("Job request has been added to the queue")
+        logger.info("Job request has been added to the queue")
 
         return True
