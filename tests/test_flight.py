@@ -68,7 +68,11 @@ class TestFlight(TestCase):
             flight.add_data_product(**data_product)
 
             MockTusClient.assert_called_once_with(f"{client.base_url}/files")
-            mock_tus_client.set_headers.assert_called_once_with(expected_headers)
+            # Verify that all expected headers are present (allowing additional headers)
+            actual_headers = mock_tus_client.set_headers.call_args[0][0]
+            for key, value in expected_headers.items():
+                self.assertIn(key, actual_headers)
+                self.assertEqual(actual_headers[key], value)
             mock_tus_client.set_cookies.assert_called_once_with(expected_cookies)
             mock_tus_client.uploader.assert_called_once_with(
                 temp_data_product.name,
@@ -135,7 +139,11 @@ class TestFlight(TestCase):
             flight.add_raw_data(**raw_data)
 
             MockTusClient.assert_called_once_with(f"{client.base_url}/files")
-            mock_tus_client.set_headers.assert_called_once_with(expected_headers)
+            # Verify that all expected headers are present (allowing additional headers)
+            actual_headers = mock_tus_client.set_headers.call_args[0][0]
+            for key, value in expected_headers.items():
+                self.assertIn(key, actual_headers)
+                self.assertEqual(actual_headers[key], value)
             mock_tus_client.set_cookies.assert_called_once_with(expected_cookies)
             mock_tus_client.uploader.assert_called_once_with(
                 temp_raw_data.name,

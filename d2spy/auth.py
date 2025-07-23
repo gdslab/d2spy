@@ -70,6 +70,11 @@ class Auth:
         if response.status_code == 200 and "access_token" in response.cookies:
             # Add JWT access token to session cookies
             self.session.cookies.set("access_token", response.cookies["access_token"])
+            # Add JWT refresh token to session cookies if present
+            if "refresh_token" in response.cookies:
+                self.session.cookies.set(
+                    "refresh_token", response.cookies["refresh_token"]
+                )
             # Fetch user object associated with access token
             user = self.get_current_user()
             # Return dictionary of user attributes and values
@@ -90,8 +95,9 @@ class Auth:
 
     def logout(self) -> None:
         """Logout of D2S platform."""
-        # Delete access-token cookie from session and end session
+        # Delete access-token and refresh-token cookies from session and end session
         self.session.cookies.clear(domain="", path="/", name="access_token")
+        self.session.cookies.clear(domain="", path="/", name="refresh_token")
         self.session.close()
         print("session ended")
 

@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Union
-
-from requests import Session
+import threading
+from requests import Session, Response
 
 from d2spy.extras.utils import pretty_print_response
 
@@ -20,10 +20,102 @@ class APIClient:
         """
         self.base_url = base_url
         self.session = session
+        self._is_refreshing = False
+        self._refresh_lock = threading.Lock()
 
         # Check if access token in session cookies
         if not self.session.cookies.get("access_token"):
             raise ValueError("Session missing access token. Must sign in first.")
+
+    def _refresh_access_token(self) -> bool:
+        """Refresh the access token using the refresh token.
+
+        Returns:
+            bool: True if refresh successful, False otherwise.
+        """
+        if not self.session.cookies.get("refresh_token"):
+            return False
+
+        url = f"{self.base_url}/api/v1/auth/refresh-token"
+        try:
+            response = self.session.post(url)
+            if response.status_code == 200:
+                # Update access token if present in response cookies
+                if "access_token" in response.cookies:
+                    self.session.cookies.set(
+                        "access_token", response.cookies["access_token"]
+                    )
+                # Update refresh token if present in response cookies
+                if "refresh_token" in response.cookies:
+                    self.session.cookies.set(
+                        "refresh_token", response.cookies["refresh_token"]
+                    )
+                return True
+            else:
+                return False
+        except Exception:
+            return False
+
+    def _make_request_with_retry(
+        self, method: str, endpoint: str, **kwargs
+    ) -> Response:
+        """Make request with automatic token refresh on 401 errors.
+
+        Args:
+            method (str): HTTP method (GET, POST, PUT, etc.)
+            endpoint (str): D2S endpoint for request.
+            **kwargs: Additional arguments for the request.
+
+        Returns:
+            Response: The response object.
+
+        Raises:
+            Exception: If token refresh fails or request fails after retry.
+        """
+        url = self.base_url + endpoint
+
+        # Extract _retry flag and remove it from kwargs before making request
+        is_retry = kwargs.pop("_retry", False)
+
+        # Make the initial request
+        response = getattr(self.session, method.lower())(url, **kwargs)
+
+        # If we get a 401 and it's not the refresh endpoint, try to refresh
+        if (
+            response.status_code == 401
+            and endpoint != "/api/v1/auth/refresh-token"
+            and not is_retry
+        ):
+
+            with self._refresh_lock:
+                if not self._is_refreshing:
+                    self._is_refreshing = True
+                    try:
+                        # Attempt to refresh the token
+                        if self._refresh_access_token():
+                            # Retry the original request
+                            kwargs["_retry"] = True
+                            response = self._make_request_with_retry(
+                                method, endpoint, **kwargs
+                            )
+                        else:
+                            # Refresh failed, clear session
+                            self.session.cookies.clear()
+                            raise ValueError(
+                                "Session expired and refresh failed. "
+                                "Please login again."
+                            )
+                    finally:
+                        self._is_refreshing = False
+                else:
+                    # Another thread is already refreshing, wait and retry once
+                    import time
+
+                    time.sleep(0.1)
+                    kwargs["_retry"] = True
+                    response = self._make_request_with_retry(method, endpoint, **kwargs)
+
+        return response
 
     def make_get_request(
         self, endpoint: str, **kwargs
@@ -36,8 +128,7 @@ class APIClient:
         Returns:
             Union[Dict, List]: JSON response from request.
         """
-        url = self.base_url + endpoint
-        response = self.session.get(url, **kwargs)
+        response = self._make_request_with_retry("GET", endpoint, **kwargs)
 
         if response.status_code != 200:
             pretty_print_response(response)
@@ -54,8 +145,7 @@ class APIClient:
         Returns:
             Dict: JSON response from request.
         """
-        url = self.base_url + endpoint
-        response = self.session.post(url, **kwargs)
+        response = self._make_request_with_retry("POST", endpoint, **kwargs)
 
         if (
             response.status_code != 200
@@ -79,8 +169,7 @@ class APIClient:
         Returns:
             Dict: JSON response from request.
         """
-        url = self.base_url + endpoint
-        response = self.session.put(url, **kwargs)
+        response = self._make_request_with_retry("PUT", endpoint, **kwargs)
 
         if response.status_code != 200:
             pretty_print_response(response)

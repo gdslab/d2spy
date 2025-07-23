@@ -409,7 +409,7 @@ class TestProject(TestCase):
 
         # Assert that the correct URL was used in the GET request
         mock_make_get_request.assert_called_once_with(
-            f"/api/v1/projects/{project_id}/vector_layers"
+            f"/api/v1/projects/{project_id}/vector_layers", params={"format": "json"}
         )
 
         # Assert that the correct project map layers were returned
