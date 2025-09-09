@@ -56,6 +56,8 @@ class Flight:
         """
         verify_file_exists(filepath)
         validate_file_extension_and_data_type(filepath, data_type)
+        # Ensure we have a fresh access token via existing refresh flow
+        self.client.make_get_request("/api/v1/users/current")
         # url for tusd server
         endpoint = f"{self.client.base_url}/files"
         # authorization cookie
@@ -102,6 +104,8 @@ class Flight:
         """
         verify_file_exists(filepath)
         validate_file_extension_for_raw_data(filepath)
+        # Ensure we have a fresh access token via existing refresh flow
+        self.client.make_get_request("/api/v1/users/current")
         # url for tusd server
         endpoint = f"{self.client.base_url}/files"
         # authorization cookie

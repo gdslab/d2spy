@@ -1,5 +1,7 @@
-from typing import Any, Dict, List, Union
 import threading
+from typing import Any, Dict, List, Union
+from urllib.parse import urlparse
+
 from requests import Session, Response
 
 from d2spy.extras.utils import pretty_print_response
@@ -23,8 +25,8 @@ class APIClient:
         self._is_refreshing = False
         self._refresh_lock = threading.Lock()
 
-        # Check if access token in session cookies
-        if not self.session.cookies.get("access_token"):
+        # Check if access token in session cookies (avoid ambiguous .get())
+        if not any(cookie.name == "access_token" for cookie in self.session.cookies):
             raise ValueError("Session missing access token. Must sign in first.")
 
     def _refresh_access_token(self) -> bool:
@@ -33,22 +35,29 @@ class APIClient:
         Returns:
             bool: True if refresh successful, False otherwise.
         """
-        if not self.session.cookies.get("refresh_token"):
+        # Ensure a refresh_token exists (avoid ambiguous .get())
+        if not any(cookie.name == "refresh_token" for cookie in self.session.cookies):
             return False
 
         url = f"{self.base_url}/api/v1/auth/refresh-token"
         try:
             response = self.session.post(url)
             if response.status_code == 200:
-                # Update access token if present in response cookies
+                # Normalize cookies to be scoped to the API host to avoid duplicates
+                host = urlparse(self.base_url).hostname or ""
                 if "access_token" in response.cookies:
                     self.session.cookies.set(
-                        "access_token", response.cookies["access_token"]
+                        "access_token",
+                        response.cookies["access_token"],
+                        domain=host,
+                        path="/",
                     )
-                # Update refresh token if present in response cookies
                 if "refresh_token" in response.cookies:
                     self.session.cookies.set(
-                        "refresh_token", response.cookies["refresh_token"]
+                        "refresh_token",
+                        response.cookies["refresh_token"],
+                        domain=host,
+                        path="/",
                     )
                 return True
             else:

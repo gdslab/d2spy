@@ -1,7 +1,9 @@
 import getpass
 import os
-import requests
+from urllib.parse import urlparse
 from typing import Optional
+
+import requests
 
 from d2spy.extras.utils import pretty_print_response
 from d2spy.models.user import User
@@ -68,12 +70,22 @@ class Auth:
         response = requests.post(url, data=credentials)
         # JWT access token returned for successful request
         if response.status_code == 200 and "access_token" in response.cookies:
-            # Add JWT access token to session cookies
-            self.session.cookies.set("access_token", response.cookies["access_token"])
-            # Add JWT refresh token to session cookies if present
+            # Normalize cookies to be scoped to the API host to avoid duplicates
+            host = urlparse(self.base_url).hostname or ""
+            token_value = response.cookies["access_token"]
+            self.session.cookies.set(
+                "access_token",
+                token_value,
+                domain=host,
+                path="/",
+            )
             if "refresh_token" in response.cookies:
+                refresh_value = response.cookies["refresh_token"]
                 self.session.cookies.set(
-                    "refresh_token", response.cookies["refresh_token"]
+                    "refresh_token",
+                    refresh_value,
+                    domain=host,
+                    path="/",
                 )
             # Fetch user object associated with access token
             user = self.get_current_user()
