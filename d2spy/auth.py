@@ -73,20 +73,36 @@ class Auth:
             # Normalize cookies to be scoped to the API host to avoid duplicates
             host = urlparse(self.base_url).hostname or ""
             token_value = response.cookies["access_token"]
-            self.session.cookies.set(
-                "access_token",
-                token_value,
-                domain=host,
-                path="/",
-            )
-            if "refresh_token" in response.cookies:
-                refresh_value = response.cookies["refresh_token"]
+            # Don't set explicit domain for localhost to avoid port-matching issues
+            if host == "localhost" or host == "127.0.0.1":
                 self.session.cookies.set(
-                    "refresh_token",
-                    refresh_value,
+                    "access_token",
+                    token_value,
+                    path="/",
+                )
+            else:
+                self.session.cookies.set(
+                    "access_token",
+                    token_value,
                     domain=host,
                     path="/",
                 )
+            if "refresh_token" in response.cookies:
+                refresh_value = response.cookies["refresh_token"]
+                # Don't set explicit domain for localhost to avoid port-matching issues
+                if host == "localhost" or host == "127.0.0.1":
+                    self.session.cookies.set(
+                        "refresh_token",
+                        refresh_value,
+                        path="/",
+                    )
+                else:
+                    self.session.cookies.set(
+                        "refresh_token",
+                        refresh_value,
+                        domain=host,
+                        path="/",
+                    )
             # Fetch user object associated with access token
             user = self.get_current_user()
             # Return dictionary of user attributes and values

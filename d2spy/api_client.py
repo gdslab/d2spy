@@ -46,19 +46,37 @@ class APIClient:
                 # Normalize cookies to be scoped to the API host to avoid duplicates
                 host = urlparse(self.base_url).hostname or ""
                 if "access_token" in response.cookies:
-                    self.session.cookies.set(
-                        "access_token",
-                        response.cookies["access_token"],
-                        domain=host,
-                        path="/",
-                    )
+                    # Don't set explicit domain for localhost to
+                    # avoid port-matching issues
+                    if host == "localhost" or host == "127.0.0.1":
+                        self.session.cookies.set(
+                            "access_token",
+                            response.cookies["access_token"],
+                            path="/",
+                        )
+                    else:
+                        self.session.cookies.set(
+                            "access_token",
+                            response.cookies["access_token"],
+                            domain=host,
+                            path="/",
+                        )
                 if "refresh_token" in response.cookies:
-                    self.session.cookies.set(
-                        "refresh_token",
-                        response.cookies["refresh_token"],
-                        domain=host,
-                        path="/",
-                    )
+                    # Don't set explicit domain for localhost to avoid
+                    # port-matching issues
+                    if host == "localhost" or host == "127.0.0.1":
+                        self.session.cookies.set(
+                            "refresh_token",
+                            response.cookies["refresh_token"],
+                            path="/",
+                        )
+                    else:
+                        self.session.cookies.set(
+                            "refresh_token",
+                            response.cookies["refresh_token"],
+                            domain=host,
+                            path="/",
+                        )
                 return True
             else:
                 return False

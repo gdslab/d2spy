@@ -1,9 +1,12 @@
 import os
 import re
+import time
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
+from geojson_pydantic import FeatureCollection
+from pydantic import ValidationError
 from rasterio.errors import RasterioIOError
 
 from d2spy import models, schemas
@@ -172,6 +175,36 @@ class DataProduct:
         # Create new DataProduct and return updated band info
         return models.DataProduct(self.client, **updated_data_product).get_band_info()
 
+    def _get_default_tools_payload(self) -> Dict[str, Any]:
+        """Return default payload for data product tools API.
+
+        Returns:
+            Dict[str, Any]: Default payload dictionary.
+        """
+        return {
+            "chm": False,
+            "chmResolution": 0.1,
+            "chmPercentile": 100,
+            "dem_id": "",
+            "dtm": False,
+            "dtmResolution": 0.1,
+            "dtmRigidness": 1,
+            "exg": False,
+            "exgRed": 0,
+            "exgGreen": 0,
+            "exgBlue": 0,
+            "hillshade": False,
+            "ndvi": False,
+            "ndviNIR": 0,
+            "ndviRed": 0,
+            "vari": False,
+            "variRed": 0,
+            "variGreen": 0,
+            "variBlue": 0,
+            "zonal": True,
+            "zonal_layer_id": "",
+        }
+
     def derive_ndvi(self, red_band_idx: int, nir_band_idx: int) -> bool:
         """Use data product's bands to derive a new NDVI data product. Must provide
         the red and NIR band indexes.
@@ -184,8 +217,12 @@ class DataProduct:
             bool: True if the job was added to the queue, otherwise False.
         """
         # Check if this is a raster data product
-        if self.data_type == "point_cloud":
-            logger.error("Not available for point clouds")
+        if (
+            self.data_type == "point_cloud"
+            or self.data_type == "panoramic"
+            or self.data_type == "3dgs"
+        ):
+            logger.error("Not available for point clouds, panoramic, or 3dgs")
             return False
 
         # Get band properties from STAC EO extension
@@ -210,18 +247,14 @@ class DataProduct:
             logger.error("NIR band index outside the range of available bands")
 
         # Prepare payload for post request
-        data = {
-            "chm": False,
-            "exg": False,
-            "exgRed": 0,
-            "exgGreen": 0,
-            "exgBlue": 0,
-            "ndvi": True,
-            "ndviNIR": nir_band_idx,
-            "ndviRed": red_band_idx,
-            "zonal": False,
-            "zonal_layer_id": "",
-        }
+        data = self._get_default_tools_payload()
+        data.update(
+            {
+                "ndvi": True,
+                "ndviNIR": nir_band_idx,
+                "ndviRed": red_band_idx,
+            }
+        )
 
         # Match project ID from data product's URL
         match = re.search(r"/projects/([a-f0-9\-]+)/", self.url)
@@ -259,8 +292,12 @@ class DataProduct:
             bool: True if the job was added to the queue, otherwise False.
         """
         # Check if this is a raster data product
-        if self.data_type == "point_cloud":
-            logger.error("Not available for point clouds")
+        if (
+            self.data_type == "point_cloud"
+            or self.data_type == "panoramic"
+            or self.data_type == "3dgs"
+        ):
+            logger.error("Not available for point clouds, panoramic, or 3dgs")
             return False
 
         # Get band properties from STAC EO extension
@@ -291,18 +328,15 @@ class DataProduct:
             logger.error("Blue band index outside the range of available bands")
 
         # Prepare payload for post request
-        data = {
-            "chm": False,
-            "exg": True,
-            "exgRed": red_band_idx,
-            "exgGreen": green_band_idx,
-            "exgBlue": blue_band_idx,
-            "ndvi": False,
-            "ndviNIR": 0,
-            "ndviRed": 0,
-            "zonal": False,
-            "zonal_layer_id": "",
-        }
+        data = self._get_default_tools_payload()
+        data.update(
+            {
+                "exg": True,
+                "exgRed": red_band_idx,
+                "exgGreen": green_band_idx,
+                "exgBlue": blue_band_idx,
+            }
+        )
 
         # Match project ID from data product's URL
         match = re.search(r"/projects/([a-f0-9\-]+)/", self.url)
@@ -322,5 +356,171 @@ class DataProduct:
         self.client.make_post_request(endpoint, json=data)
 
         logger.info("Job request has been added to the queue")
+
+        return True
+
+    def _fetch_zonal_statistics(
+        self, zonal_layer_id: str, project_id: str
+    ) -> Optional[FeatureCollection]:
+        """Internal method to fetch existing zonal statistics
+        (GET only, no job submission).
+
+        Args:
+            zonal_layer_id (str): ID of zonal layer.
+            project_id (str): Project ID.
+
+        Returns:
+            Optional[FeatureCollection]: Existing zonal statistics, or None
+                if not found.
+        """
+        # Prepare endpoint for get request
+        endpoint = f"/api/v1/projects/{project_id}/flights/{self.flight_id}"
+        endpoint += (
+            f"/data_products/{self.id}/zonal_statistics?layer_id={zonal_layer_id}"
+        )
+
+        # Get zonal statistics
+        response_data = self.client.make_get_request(endpoint)
+        if not response_data:
+            return None
+
+        try:
+            feature_collection = FeatureCollection.model_validate(response_data)
+            if len(feature_collection.features) > 0:
+                return feature_collection
+        except ValidationError as e:
+            logger.error(f"Failed to parse zonal statistics: {e}")
+
+        return None
+
+    def get_zonal_statistics(
+        self,
+        zonal_layer_id: str,
+        wait: bool = True,
+        timeout: int = 300,
+        poll_interval: int = 5,
+    ) -> Optional[FeatureCollection]:
+        """Generate and/or retrieve zonal statistics for a data product.
+
+        Args:
+            zonal_layer_id (str): ID of zonal layer.
+            wait (bool): If True and statistics don't exist, submit job and
+                poll for results. If False, submit job but return immediately.
+                Defaults to True.
+            timeout (int): Maximum seconds to wait for results (only used if wait=True).
+                Defaults to 300 seconds (5 minutes).
+            poll_interval (int): Seconds between polling attempts
+                (only used if wait=True). Defaults to 5 seconds.
+
+        Returns:
+            Optional[FeatureCollection]: Zonal statistics in GeoJSON format, or None.
+        """
+        # Check if the data product is a raster
+        if (
+            self.data_type == "point_cloud"
+            or self.data_type == "panoramic"
+            or self.data_type == "3dgs"
+        ):
+            logger.error("Not available for point clouds, panoramic, or 3dgs")
+            return None
+
+        # Check if the data product has a single band
+        eo_properties = self.get_band_info()
+        if not isinstance(eo_properties, List) or len(eo_properties) < 1:
+            logger.error("Data product must have at least one band")
+            return None
+
+        if isinstance(eo_properties, List) and len(eo_properties) > 1:
+            logger.error("Data product must have a single band")
+            return None
+
+        # Match project ID from data product's URL
+        match = re.search(r"/projects/([a-f0-9\-]+)/", self.url)
+
+        # Extract matched project ID
+        if not match:
+            logger.error("Unable to find project ID associated with data product")
+            return None
+
+        project_id = match.group(1)
+
+        # Check if statistics already exist
+        feature_collection = self._fetch_zonal_statistics(zonal_layer_id, project_id)
+        if feature_collection:
+            return feature_collection
+
+        # Statistics don't exist - submit job
+        logger.info("No zonal statistics found - submitting job to generate new ones")
+        if not self.generate_zonal_statistics(zonal_layer_id):
+            logger.error("Failed to submit job to generate zonal statistics")
+            return None
+
+        # If not waiting, return early
+        if not wait:
+            logger.info(
+                "Job submitted. Call get_zonal_statistics() again to retrieve results."
+            )
+            return None
+
+        # Poll for results
+        logger.info(
+            f"Waiting for zonal statistics (timeout: {timeout}s, checking "
+            f"every {poll_interval}s)..."
+        )
+        elapsed = 0
+
+        while elapsed < timeout:
+            time.sleep(poll_interval)
+            elapsed += poll_interval
+
+            feature_collection = self._fetch_zonal_statistics(
+                zonal_layer_id, project_id
+            )
+            if feature_collection:
+                logger.info(f"Zonal statistics ready after {elapsed}s")
+                return feature_collection
+
+            logger.debug(f"Still waiting... ({elapsed}s elapsed)")
+
+        logger.warning(
+            f"Timeout reached after {timeout}s. Statistics may still be processing."
+        )
+        logger.info("Call get_zonal_statistics() again later to retrieve results.")
+        return None
+
+    def generate_zonal_statistics(self, zonal_layer_id: str) -> bool:
+        """Generate zonal statistics for a data product.
+
+        Args:
+            zonal_layer_id (str): ID of zonal layer.
+
+        Returns:
+            bool: True if the job was added to the queue, otherwise False.
+        """
+        # Prepare payload for post request
+        data = self._get_default_tools_payload()
+        data.update(
+            {
+                "dem_id": str(self.id),
+                "zonal_layer_id": zonal_layer_id,
+            }
+        )
+
+        # Match project ID from data product's URL
+        match = re.search(r"/projects/([a-f0-9\-]+)/", self.url)
+
+        # Extract matched project ID
+        if match:
+            project_id = match.group(1)
+        else:
+            logger.error("Unable to find project ID associated with data product")
+            return False
+
+        # Prepare endpoint for post request
+        endpoint = f"/api/v1/projects/{project_id}/flights/{self.flight_id}"
+        endpoint += f"/data_products/{self.id}/tools"
+
+        # post form data
+        self.client.make_post_request(endpoint, json=data)
 
         return True
