@@ -36,7 +36,7 @@ TEST_DATA_PRODUCT = {
     "deactivated_at": None,
     "public": False,
     "status": "SUCCESS",
-    "url": "https://example.com/some/filepath/dsm.tif",
+    "url": "https://example.com/static/projects/24f77778-08d4-47d6-86a6-c6e32848370f/flights/b4eb23cc-3d36-4586-b11c-a0a95b00d245/data_products/2c2d5ce4-5611-4108-9f66-83ca51f5f52b/dsm.tif",  # noqa: E501
 }
 
 

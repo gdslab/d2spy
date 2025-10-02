@@ -249,8 +249,34 @@ class TestAuth(TestCase):
         self.assertIn("access_token", session.cookies)
         self.assertIn("refresh_token", session.cookies)
 
+        # Keep track of cookies to clear
+        cleared_cookies = []
+
+        # Mock the cookie jar clear method to track what gets cleared
+        session.cookies.clear
+
+        def mock_clear(domain=None, path=None, name=None):
+            if name:
+                cleared_cookies.append(name)
+                # Find and remove the actual cookie from the jar
+                for cookie in list(session.cookies):
+                    if cookie.name == name:
+                        session.cookies._cookies[cookie.domain][cookie.path].pop(
+                            name, None
+                        )
+
+        session.cookies.clear = mock_clear
+        session.close = Mock()
+
         # Logout of session
         auth.logout()
+
+        # Assert that session.close was called
+        session.close.assert_called_once()
+
+        # Assert that clear was called for both tokens
+        self.assertIn("access_token", cleared_cookies)
+        self.assertIn("refresh_token", cleared_cookies)
 
         # Assert both tokens are no longer in session after logout
         self.assertNotIn("access_token", session.cookies)

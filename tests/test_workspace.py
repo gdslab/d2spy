@@ -91,8 +91,31 @@ class TestWorkspace(TestCase):
         # Assert access token is in session after login
         self.assertIn("access_token", workspace.session.cookies)
 
+        # Keep track of cookies to clear
+        cleared_cookies = []
+
+        # Mock the cookie jar clear method to track what gets cleared
+        def mock_clear(domain=None, path=None, name=None):
+            if name:
+                cleared_cookies.append(name)
+                # Find and remove the actual cookie from the jar
+                for cookie in list(workspace.session.cookies):
+                    if cookie.name == name:
+                        workspace.session.cookies._cookies[cookie.domain][
+                            cookie.path
+                        ].pop(name, None)
+
+        workspace.session.cookies.clear = mock_clear
+        workspace.session.close = Mock()
+
         # Logout of session
         workspace.logout()
+
+        # Assert that session.close was called
+        workspace.session.close.assert_called_once()
+
+        # Assert that clear was called for access_token
+        self.assertIn("access_token", cleared_cookies)
 
         # Assert access token is no longer in session after logout
         self.assertNotIn("access_token", workspace.session.cookies)

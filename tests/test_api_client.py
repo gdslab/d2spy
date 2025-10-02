@@ -1,8 +1,49 @@
 from unittest import TestCase
 from unittest.mock import patch, Mock
 import threading
+from http.cookiejar import Cookie
 
 from d2spy.api_client import APIClient
+
+
+def create_mock_cookie(name, value):
+    """Helper to create a mock cookie object."""
+    return Cookie(
+        version=0,
+        name=name,
+        value=value,
+        port=None,
+        port_specified=False,
+        domain="example.com",
+        domain_specified=True,
+        domain_initial_dot=False,
+        path="/",
+        path_specified=True,
+        secure=False,
+        expires=None,
+        discard=True,
+        comment=None,
+        comment_url=None,
+        rest={"HttpOnly": None},
+        rfc2109=False,
+    )
+
+
+class MockCookieJar:
+    """Mock cookie jar that supports both iteration and .get() method."""
+
+    def __init__(self, cookies_dict):
+        self.cookies_dict = cookies_dict
+        self._cookies = [create_mock_cookie(k, v) for k, v in cookies_dict.items()]
+        # Use Mock for methods that need assertion checking
+        self.set = Mock()
+        self.clear = Mock()
+
+    def __iter__(self):
+        return iter(self._cookies)
+
+    def get(self, key, default=None):
+        return self.cookies_dict.get(key, default)
 
 
 class TestAPIClient(TestCase):
@@ -17,6 +58,8 @@ class TestAPIClient(TestCase):
         # Create a mock session that returns the mock response for GET requests
         mock_session = MockSession()
         mock_session.get.return_value = mock_response
+        # Mock cookies to support iteration
+        mock_session.cookies = MockCookieJar({"access_token": "fake_token"})
 
         # Instantiate the APIClient with a test URL and the mock session
         client = APIClient("http://example.com", mock_session)
@@ -41,6 +84,8 @@ class TestAPIClient(TestCase):
         # Create a mock session that returns the mock response for POST requests
         mock_session = MockSession()
         mock_session.post.return_value = mock_response
+        # Mock cookies to support iteration
+        mock_session.cookies = MockCookieJar({"access_token": "fake_token"})
 
         # Instantiate the APIClient with a test URL and the mock session
         client = APIClient("http://example.com", mock_session)
@@ -65,6 +110,8 @@ class TestAPIClient(TestCase):
         # Create a mock session that returns the mock response for PUT requests
         mock_session = MockSession()
         mock_session.put.return_value = mock_response
+        # Mock cookies to support iteration
+        mock_session.cookies = MockCookieJar({"access_token": "fake_token"})
 
         # Instantiate the APIClient with a test URL and the mock session
         client = APIClient("http://example.com", mock_session)
@@ -102,10 +149,12 @@ class TestAPIClient(TestCase):
 
         # Create mock session with cookies
         mock_session = MockSession()
-        mock_session.cookies.get.side_effect = lambda key: {
-            "access_token": "old_access_token",
-            "refresh_token": "old_refresh_token",
-        }.get(key)
+        mock_session.cookies = MockCookieJar(
+            {
+                "access_token": "old_access_token",
+                "refresh_token": "old_refresh_token",
+            }
+        )
 
         # Configure responses: 401, then refresh success, then original request success
         mock_session.get.side_effect = [mock_401_response, mock_success_response]
@@ -122,9 +171,13 @@ class TestAPIClient(TestCase):
             "http://example.com/api/v1/auth/refresh-token"
         )
 
-        # Assert new tokens were set
-        mock_session.cookies.set.assert_any_call("access_token", "new_access_token")
-        mock_session.cookies.set.assert_any_call("refresh_token", "new_refresh_token")
+        # Assert new tokens were set (with domain and path parameters)
+        mock_session.cookies.set.assert_any_call(
+            "access_token", "new_access_token", domain="example.com", path="/"
+        )
+        mock_session.cookies.set.assert_any_call(
+            "refresh_token", "new_refresh_token", domain="example.com", path="/"
+        )
 
         # Assert original request was retried and succeeded
         self.assertEqual(result, expected_result)
@@ -144,10 +197,12 @@ class TestAPIClient(TestCase):
 
         # Create mock session with cookies
         mock_session = MockSession()
-        mock_session.cookies.get.side_effect = lambda key: {
-            "access_token": "old_access_token",
-            "refresh_token": "old_refresh_token",
-        }.get(key)
+        mock_session.cookies = MockCookieJar(
+            {
+                "access_token": "old_access_token",
+                "refresh_token": "old_refresh_token",
+            }
+        )
 
         # Configure responses: 401 on original, 401 on refresh
         mock_session.get.return_value = mock_401_response
@@ -176,10 +231,10 @@ class TestAPIClient(TestCase):
 
         # Create mock session without refresh token
         mock_session = MockSession()
-        mock_session.cookies.get.side_effect = lambda key: {
-            "access_token": "old_access_token"
-        }.get(
-            key
+        mock_session.cookies = MockCookieJar(
+            {
+                "access_token": "old_access_token",
+            }
         )  # No refresh_token
 
         # Configure response: 401 on original request
@@ -208,10 +263,12 @@ class TestAPIClient(TestCase):
 
         # Create mock session
         mock_session = MockSession()
-        mock_session.cookies.get.side_effect = lambda key: {
-            "access_token": "old_access_token",
-            "refresh_token": "old_refresh_token",
-        }.get(key)
+        mock_session.cookies = MockCookieJar(
+            {
+                "access_token": "old_access_token",
+                "refresh_token": "old_refresh_token",
+            }
+        )
 
         # Configure response: 401 on refresh endpoint call
         mock_session.post.return_value = mock_401_response
@@ -237,10 +294,12 @@ class TestAPIClient(TestCase):
 
         # Create mock session
         mock_session = MockSession()
-        mock_session.cookies.get.side_effect = lambda key: {
-            "access_token": "access_token",
-            "refresh_token": "refresh_token",
-        }.get(key)
+        mock_session.cookies = MockCookieJar(
+            {
+                "access_token": "access_token",
+                "refresh_token": "refresh_token",
+            }
+        )
 
         # Configure response: 500 error
         mock_session.get.return_value = mock_500_response
@@ -278,10 +337,12 @@ class TestAPIClient(TestCase):
 
         # Create mock session
         mock_session = MockSession()
-        mock_session.cookies.get.side_effect = lambda key: {
-            "access_token": "old_token",
-            "refresh_token": "old_refresh",
-        }.get(key)
+        mock_session.cookies = MockCookieJar(
+            {
+                "access_token": "old_token",
+                "refresh_token": "old_refresh",
+            }
+        )
 
         # Configure responses
         mock_session.get.side_effect = [

@@ -488,7 +488,7 @@ class TestDataProduct(TestCase):
         # Assert that None is returned for multi-band rasters
         self.assertIsNone(result)
 
-    @patch("d2spy.extras.utils.clip_by_mask")
+    @patch("d2spy.models.data_product.clip_by_mask")
     def test_clip(self, mock_clip_by_mask):
         """Test clipping data product by GeoJSON"""
         data_product = DataProduct(self.client, **TEST_DATA_PRODUCT)
@@ -544,7 +544,7 @@ class TestDataProduct(TestCase):
         # Assert that False is returned for point clouds
         self.assertFalse(result)
 
-    @patch("d2spy.extras.utils.clip_by_mask")
+    @patch("d2spy.models.data_product.clip_by_mask")
     def test_clip_with_api_key(self, mock_clip_by_mask):
         """Test clipping with API key when 401 error occurs"""
         data_product = DataProduct(self.client, **TEST_DATA_PRODUCT)
