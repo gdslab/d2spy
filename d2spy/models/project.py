@@ -109,7 +109,7 @@ class Project:
         Returns:
             MapLayerFeatureCollection: GeoJSON Feature Collection with D2S metadata.
         """
-        endpoint = f"/api/v1/projects/{self.id}/vector_layers"
+        endpoint = f"/api/v1/projects/{self.id}/vector_layers/geojson"
 
         # vector layer data
         data = {"layer_name": layer_name, "geojson": feature_collection}

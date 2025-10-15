@@ -368,7 +368,7 @@ class TestProject(TestCase):
 
         # Assert that the correct URL and JSON payload was used in the POST request
         mock_make_post_request.assert_called_once_with(
-            f"/api/v1/projects/{project_id}/vector_layers",
+            f"/api/v1/projects/{project_id}/vector_layers/geojson",
             json={
                 "layer_name": map_layer_name,
                 "geojson": map_layer_feature_collection,
