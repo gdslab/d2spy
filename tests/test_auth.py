@@ -344,3 +344,111 @@ class TestAuth(TestCase):
         )
         # Assert refresh_token is not present (backward compatibility)
         self.assertNotIn("refresh_token", login_session.cookies)
+
+    @patch("d2spy.auth.requests.get")
+    @patch("getpass.getpass")
+    @patch("d2spy.auth.requests.post")
+    @patch("d2spy.auth.requests.Session.get")
+    @patch.dict("os.environ", {}, clear=True)
+    def test_logout_localhost(
+        self, mock_get_login, mock_post, mock_getpass, mock_get_init
+    ):
+        """Test that logout works correctly for localhost URLs."""
+        # Localhost URL
+        base_url = "http://localhost:8000"
+
+        # Mock the GET request that occurs when Auth is initialized
+        mock_get_init_response = Mock()
+        mock_get_init_response.status_code = 200
+        mock_get_init.return_value = mock_get_init_response
+
+        # Mock the POST request that occurs during login
+        mock_post_response = Mock()
+        mock_post_response.cookies = {
+            "access_token": "fake_token",
+            "refresh_token": "fake_refresh_token",
+        }
+        mock_post_response.status_code = 200
+        mock_post.return_value = mock_post_response
+
+        # User credentials
+        user_email = "user@example.com"
+        user_password = "userpassword"
+        mock_getpass.return_value = user_password
+
+        # Mock the GET request that occurs after login
+        mock_get_login_response = Mock()
+        mock_get_login_response.status_code = 200
+        mock_get_login_response.json.return_value = TEST_USER
+        mock_get_login.return_value = mock_get_login_response
+
+        # Create an Auth instance and login
+        auth = Auth(base_url)
+        session = auth.login(email=user_email)
+
+        # Assert tokens are in session after login
+        self.assertIn("access_token", session.cookies)
+        self.assertIn("refresh_token", session.cookies)
+
+        # Mock session.close to verify it gets called
+        session.close = Mock()
+
+        # Logout should not raise KeyError
+        auth.logout()
+
+        # Assert that session.close was called
+        session.close.assert_called_once()
+
+    @patch("d2spy.auth.requests.get")
+    @patch("getpass.getpass")
+    @patch("d2spy.auth.requests.post")
+    @patch("d2spy.auth.requests.Session.get")
+    @patch.dict("os.environ", {}, clear=True)
+    def test_logout_remote_host(
+        self, mock_get_login, mock_post, mock_getpass, mock_get_init
+    ):
+        """Test that logout works correctly for remote host URLs."""
+        # Remote host URL
+        base_url = "https://example.com"
+
+        # Mock the GET request that occurs when Auth is initialized
+        mock_get_init_response = Mock()
+        mock_get_init_response.status_code = 200
+        mock_get_init.return_value = mock_get_init_response
+
+        # Mock the POST request that occurs during login
+        mock_post_response = Mock()
+        mock_post_response.cookies = {
+            "access_token": "fake_token",
+            "refresh_token": "fake_refresh_token",
+        }
+        mock_post_response.status_code = 200
+        mock_post.return_value = mock_post_response
+
+        # User credentials
+        user_email = "user@example.com"
+        user_password = "userpassword"
+        mock_getpass.return_value = user_password
+
+        # Mock the GET request that occurs after login
+        mock_get_login_response = Mock()
+        mock_get_login_response.status_code = 200
+        mock_get_login_response.json.return_value = TEST_USER
+        mock_get_login.return_value = mock_get_login_response
+
+        # Create an Auth instance and login
+        auth = Auth(base_url)
+        session = auth.login(email=user_email)
+
+        # Assert tokens are in session after login
+        self.assertIn("access_token", session.cookies)
+        self.assertIn("refresh_token", session.cookies)
+
+        # Mock session.close to verify it gets called
+        session.close = Mock()
+
+        # Logout should not raise KeyError
+        auth.logout()
+
+        # Assert that session.close was called
+        session.close.assert_called_once()

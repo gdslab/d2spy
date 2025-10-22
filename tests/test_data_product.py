@@ -4,7 +4,6 @@ from typing import List
 from unittest import TestCase
 from unittest.mock import patch
 
-from geojson_pydantic import FeatureCollection
 from requests import Session
 
 from d2spy.api_client import APIClient
@@ -368,10 +367,11 @@ class TestDataProduct(TestCase):
         # Get zonal statistics (should return immediately since they exist)
         result = data_product.get_zonal_statistics(zonal_layer_id, wait=False)
 
-        # Assert that the feature collection is returned
+        # Assert that the feature collection dict is returned
         self.assertIsNotNone(result)
-        self.assertIsInstance(result, FeatureCollection)
-        self.assertEqual(len(result.features), 1)
+        self.assertIsInstance(result, dict)
+        self.assertEqual(result["type"], "FeatureCollection")
+        self.assertEqual(len(result["features"]), 1)
 
         # Extract expected endpoint
         project_id = "24f77778-08d4-47d6-86a6-c6e32848370f"
@@ -449,10 +449,11 @@ class TestDataProduct(TestCase):
             zonal_layer_id, wait=True, timeout=300, poll_interval=5
         )
 
-        # Assert that the feature collection is eventually returned
+        # Assert that the feature collection dict is eventually returned
         self.assertIsNotNone(result)
-        self.assertIsInstance(result, FeatureCollection)
-        self.assertEqual(len(result.features), 1)
+        self.assertIsInstance(result, dict)
+        self.assertEqual(result["type"], "FeatureCollection")
+        self.assertEqual(len(result["features"]), 1)
 
         # Verify that polling occurred
         self.assertEqual(mock_make_get_request.call_count, 2)
@@ -488,7 +489,7 @@ class TestDataProduct(TestCase):
         # Assert that None is returned for multi-band rasters
         self.assertIsNone(result)
 
-    @patch("d2spy.models.data_product.clip_by_mask")
+    @patch("d2spy.extras.geo.clip_by_mask")
     def test_clip(self, mock_clip_by_mask):
         """Test clipping data product by GeoJSON"""
         data_product = DataProduct(self.client, **TEST_DATA_PRODUCT)
@@ -544,7 +545,7 @@ class TestDataProduct(TestCase):
         # Assert that False is returned for point clouds
         self.assertFalse(result)
 
-    @patch("d2spy.models.data_product.clip_by_mask")
+    @patch("d2spy.extras.geo.clip_by_mask")
     def test_clip_with_api_key(self, mock_clip_by_mask):
         """Test clipping with API key when 401 error occurs"""
         data_product = DataProduct(self.client, **TEST_DATA_PRODUCT)

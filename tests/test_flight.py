@@ -5,6 +5,7 @@ from typing import List
 from unittest import TestCase
 from unittest.mock import patch
 
+import requests_mock
 from requests import Session
 
 from d2spy.api_client import APIClient
@@ -18,12 +19,16 @@ from example_data import TEST_FLIGHT, TEST_PROJECT
 
 
 class TestFlight(TestCase):
+    @requests_mock.Mocker()
     @patch("d2spy.extras.third_party.tusclient.client.TusClient")
-    def test_add_data_product(self, MockTusClient):
+    def test_add_data_product(self, m, MockTusClient):
         # Setup a test session
         base_url = "https://example.com"
         session = Session()
         session.cookies.set("access_token", "fake_token")
+
+        # Mock the users/current endpoint (called to refresh token before upload)
+        m.get(f"{base_url}/api/v1/users/current", json={"email": "test@example.com"})
 
         # Instantiate the APIClient with a test URL and the test session
         client = APIClient(base_url, session)
@@ -89,12 +94,16 @@ class TestFlight(TestCase):
                 mock_uploader.upload_chunk.call_count, 5
             )  # 50 MiB / 10 MiB
 
+    @requests_mock.Mocker()
     @patch("d2spy.extras.third_party.tusclient.client.TusClient")
-    def test_add_raw_data(self, MockTusClient):
+    def test_add_raw_data(self, m, MockTusClient):
         # Setup a test session
         base_url = "https://example.com"
         session = Session()
         session.cookies.set("access_token", "fake_token")
+
+        # Mock the users/current endpoint (called to refresh token before upload)
+        m.get(f"{base_url}/api/v1/users/current", json={"email": "test@example.com"})
 
         # Instantiate the APIClient with a test URL and the test session
         client = APIClient(base_url, session)

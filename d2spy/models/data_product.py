@@ -5,15 +5,34 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from geojson_pydantic import FeatureCollection
-from pydantic import ValidationError
-from rasterio.errors import RasterioIOError
+# Geo dependencies are optional
+try:
+    from rasterio.errors import RasterioIOError
+
+    HAS_RASTERIO = True
+except ImportError:
+    HAS_RASTERIO = False
+    RasterioIOError = Exception  # Fallback for type hints
 
 from d2spy import models, schemas
 from d2spy.api_client import APIClient
-from d2spy.extras.utils import clip_by_mask
 from d2spy.schemas.stac_properties import STACProperties, STACEOProperties
 from d2spy.utils.logging_config import get_logger
+
+
+# clip_by_mask requires geo extras - import lazily to avoid hard dependency
+def _lazy_import_clip_by_mask():
+    """Lazy import of clip_by_mask to avoid requiring geo extras."""
+    try:
+        from d2spy.extras.geo import clip_by_mask
+
+        return clip_by_mask
+    except ImportError:
+        raise ImportError(
+            "clip_by_mask requires geospatial dependencies.\n"
+            "Install with: pip install d2spy[geo]"
+        )
+
 
 logger = get_logger(__name__)
 
@@ -56,6 +75,8 @@ class DataProduct:
     ) -> bool:
         """Clips data product by GeoJSON Polygon Feature.
 
+        Requires: pip install d2spy[geo]
+
         Args:
             geojson_feature (Dict[Any, Any]): GeoJSON Polygon Feature.
             out_raster (str): Path for output raster.
@@ -67,6 +88,9 @@ class DataProduct:
         if self.data_type == "point_cloud":
             logger.error("Not available for point clouds")
             return False
+
+        # Lazy import to avoid requiring geo extras for core functionality
+        clip_by_mask = _lazy_import_clip_by_mask()
 
         try:
             clip_by_mask(self.url, geojson_feature, out_raster, export_vrt)
@@ -361,7 +385,7 @@ class DataProduct:
 
     def _fetch_zonal_statistics(
         self, zonal_layer_id: str, project_id: str
-    ) -> Optional[FeatureCollection]:
+    ) -> Optional[Dict[str, Any]]:
         """Internal method to fetch existing zonal statistics
         (GET only, no job submission).
 
@@ -370,7 +394,7 @@ class DataProduct:
             project_id (str): Project ID.
 
         Returns:
-            Optional[FeatureCollection]: Existing zonal statistics, or None
+            Optional[Dict[str, Any]]: Existing zonal statistics as GeoJSON dict, or None
                 if not found.
         """
         # Prepare endpoint for get request
@@ -379,17 +403,14 @@ class DataProduct:
             f"/data_products/{self.id}/zonal_statistics?layer_id={zonal_layer_id}"
         )
 
-        # Get zonal statistics
+        # Get zonal statistics - trust backend returns valid GeoJSON
         response_data = self.client.make_get_request(endpoint)
         if not response_data:
             return None
 
-        try:
-            feature_collection = FeatureCollection.model_validate(response_data)
-            if len(feature_collection.features) > 0:
-                return feature_collection
-        except ValidationError as e:
-            logger.error(f"Failed to parse zonal statistics: {e}")
+        # Return raw GeoJSON dict if it has features
+        if isinstance(response_data, dict) and response_data.get("features"):
+            return response_data
 
         return None
 
@@ -399,7 +420,7 @@ class DataProduct:
         wait: bool = True,
         timeout: int = 300,
         poll_interval: int = 5,
-    ) -> Optional[FeatureCollection]:
+    ) -> Optional[Dict[str, Any]]:
         """Generate and/or retrieve zonal statistics for a data product.
 
         Args:
@@ -413,7 +434,7 @@ class DataProduct:
                 (only used if wait=True). Defaults to 5 seconds.
 
         Returns:
-            Optional[FeatureCollection]: Zonal statistics in GeoJSON format, or None.
+            Optional[Dict[str, Any]]: Zonal statistics as GeoJSON dict, or None.
         """
         # Check if the data product is a raster
         if (

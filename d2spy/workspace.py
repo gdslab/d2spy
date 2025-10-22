@@ -58,7 +58,11 @@ class Workspace:
     def logout(self) -> None:
         """Logout of D2S platform."""
         # Delete access-token cookie from session and end session
-        self.session.cookies.clear(domain="", path="/", name="access_token")
+        # Clear all cookies to avoid domain-matching issues
+        # (cookies may be stored with different domains depending on host type)
+        for cookie in list(self.session.cookies):
+            if cookie.name in ["access_token", "refresh_token"]:
+                self.session.cookies.clear(cookie.domain, cookie.path, cookie.name)
         self.session.close()
         print("session ended")
 

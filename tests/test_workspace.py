@@ -313,3 +313,107 @@ class TestWorkspace(TestCase):
             self.assertEqual(project.flight_count, project_data["flight_count"])
             self.assertEqual(project.role, project_data["role"])
             self.assertEqual(project.centroid, project_data["centroid"])
+
+    @patch("d2spy.auth.requests.get")
+    @patch("getpass.getpass")
+    @patch("d2spy.auth.requests.post")
+    @patch("d2spy.auth.requests.Session.get")
+    def test_logout_localhost(
+        self, mock_get_login, mock_post, mock_getpass, mock_get_init
+    ):
+        """Test that logout works correctly for localhost URLs."""
+        # Localhost URL
+        base_url = "http://localhost:8000"
+
+        # Mock the GET request that occurs when Auth is initialized
+        mock_get_init_response = Mock()
+        mock_get_init_response.status_code = 200
+        mock_get_init.return_value = mock_get_init_response
+
+        # Mock the POST request that occurs during login
+        mock_post_response = Mock()
+        mock_post_response.cookies = {
+            "access_token": "fake_token",
+            "refresh_token": "fake_refresh_token",
+        }
+        mock_post_response.status_code = 200
+        mock_post.return_value = mock_post_response
+
+        # User credentials
+        user_email = "user@example.com"
+        user_password = "userpassword"
+        mock_getpass.return_value = user_password
+
+        # Mock the GET request that occurs after login
+        mock_get_login_response = Mock()
+        mock_get_login_response.status_code = 200
+        mock_get_login_response.json.return_value = TEST_USER
+        mock_get_login.return_value = mock_get_login_response
+
+        # Connect to a workspace
+        workspace = Workspace.connect(base_url, user_email)
+
+        # Assert tokens are in session after login
+        self.assertIn("access_token", workspace.session.cookies)
+        self.assertIn("refresh_token", workspace.session.cookies)
+
+        # Mock session.close to verify it gets called
+        workspace.session.close = Mock()
+
+        # Logout should not raise KeyError
+        workspace.logout()
+
+        # Assert that session.close was called
+        workspace.session.close.assert_called_once()
+
+    @patch("d2spy.auth.requests.get")
+    @patch("getpass.getpass")
+    @patch("d2spy.auth.requests.post")
+    @patch("d2spy.auth.requests.Session.get")
+    def test_logout_remote_host(
+        self, mock_get_login, mock_post, mock_getpass, mock_get_init
+    ):
+        """Test that logout works correctly for remote host URLs."""
+        # Remote host URL
+        base_url = "https://example.com"
+
+        # Mock the GET request that occurs when Auth is initialized
+        mock_get_init_response = Mock()
+        mock_get_init_response.status_code = 200
+        mock_get_init.return_value = mock_get_init_response
+
+        # Mock the POST request that occurs during login
+        mock_post_response = Mock()
+        mock_post_response.cookies = {
+            "access_token": "fake_token",
+            "refresh_token": "fake_refresh_token",
+        }
+        mock_post_response.status_code = 200
+        mock_post.return_value = mock_post_response
+
+        # User credentials
+        user_email = "user@example.com"
+        user_password = "userpassword"
+        mock_getpass.return_value = user_password
+
+        # Mock the GET request that occurs after login
+        mock_get_login_response = Mock()
+        mock_get_login_response.status_code = 200
+        mock_get_login_response.json.return_value = TEST_USER
+        mock_get_login.return_value = mock_get_login_response
+
+        # Connect to a workspace
+        workspace = Workspace.connect(base_url, user_email)
+
+        # Assert tokens are in session after login
+        self.assertIn("access_token", workspace.session.cookies)
+        self.assertIn("refresh_token", workspace.session.cookies)
+
+        # Mock session.close to verify it gets called
+        workspace.session.close = Mock()
+
+        # Logout should not raise KeyError
+        workspace.logout()
+
+        # Assert that session.close was called
+        workspace.session.close.assert_called_once()
