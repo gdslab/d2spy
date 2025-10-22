@@ -22,13 +22,21 @@ D2spy is a Python package for interacting with Data to Science instances.
 - Create new projects and flights
 - Upload data products to flights
 
-## Quickstart
+## Installation
 
-Install **d2spy** from PyPi by running:
+D2spy supports two installation modes:
 
-```python
+**Core Installation** (minimal dependencies):
+```bash
 pip install d2spy
 ```
+Includes full API access for authentication, project/flight management, data uploads, and server-side analysis tools (NDVI, ExG, zonal statistics).
+
+**Geo Installation** (with geospatial dependencies):
+```bash
+pip install d2spy[geo]
+```
+Adds client-side geospatial processing capabilities including raster clipping, EXIF extraction, and bounding box generation. Requires `rasterio`, `geopandas`, and `exifread`.
 
 ## Learn more
 
