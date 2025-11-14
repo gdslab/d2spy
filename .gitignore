@@ -11,3 +11,6 @@ site
 
 # distribution files
 dist
+
+# ide
+.vscode/
