@@ -53,6 +53,7 @@ class DataProduct:
     bbox: Optional[List[float]] = None
     crs: Optional[Dict] = None
     resolution: Optional[Dict] = None
+    _file_size: Optional[int] = None
 
     def __init__(self, client: APIClient, **kwargs):
         self.client = client
@@ -69,6 +70,68 @@ class DataProduct:
             f"url={self.url!r}, bbox={self.bbox!r}, crs={self.crs!r}, "
             f"resolution={self.resolution!r})"
         )
+
+    def _fetch_file_size(self) -> Optional[int]:
+        """Fetch file size via HTTP HEAD request.
+
+        Uses the session's access token for authentication. If that fails,
+        attempts to refresh the token and retry. Falls back to API key
+        if token-based auth fails.
+
+        Returns:
+            Optional[int]: File size in bytes, or None if unavailable.
+        """
+        try:
+            # Try with session (includes access token cookie)
+            response = self.client.session.head(self.url, timeout=10)
+
+            if response.status_code == 200:
+                content_length = response.headers.get("Content-Length")
+                return int(content_length) if content_length else None
+
+            if response.status_code == 401:
+                # Try refreshing token and retry
+                if self.client._refresh_access_token():
+                    response = self.client.session.head(self.url, timeout=10)
+                    if response.status_code == 200:
+                        content_length = response.headers.get("Content-Length")
+                        return int(content_length) if content_length else None
+
+                # Token refresh failed or still 401, try API key
+                api_key = os.environ.get("D2S_API_KEY")
+                if api_key:
+                    response = self.client.session.head(
+                        f"{self.url}?API_KEY={api_key}", timeout=10
+                    )
+                    if response.status_code == 200:
+                        content_length = response.headers.get("Content-Length")
+                        return int(content_length) if content_length else None
+
+                logger.warning(
+                    "Unable to fetch file size. Try setting 'D2S_API_KEY' env var."
+                )
+
+            return None
+        except Exception as e:
+            logger.warning(f"Failed to fetch file size: {e}")
+            return None
+
+    @property
+    def file_size(self) -> Optional[int]:
+        """Return file size in bytes (lazy-loaded, cached).
+
+        Makes an HTTP HEAD request to fetch the Content-Length header.
+        Works for all data types (rasters, point clouds, etc.).
+        For private files, set the D2S_API_KEY environment variable.
+
+        Returns:
+            Optional[int]: File size in bytes, or None if unavailable.
+        """
+        if hasattr(self, "_file_size"):
+            return self._file_size
+
+        self._file_size = self._fetch_file_size()
+        return self._file_size
 
     def clip(
         self, geojson_feature: Dict[Any, Any], out_raster: str, export_vrt: bool = False

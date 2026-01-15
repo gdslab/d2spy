@@ -627,3 +627,157 @@ class TestDataProduct(TestCase):
         self.assertFalse(payload["ndvi"])
         self.assertFalse(payload["vari"])
         self.assertTrue(payload["zonal"])
+
+    def test_file_size_success(self):
+        """Test file_size returns correct size on successful HEAD request"""
+        data_product = DataProduct(self.client, **TEST_DATA_PRODUCT)
+
+        # Mock successful HEAD response with Content-Length
+        mock_response = type(
+            "Response",
+            (),
+            {"status_code": 200, "headers": {"Content-Length": "1048576"}},
+        )()
+        self.client.session.head = lambda url, timeout: mock_response
+
+        result = data_product.file_size
+
+        # Assert that file size is returned correctly
+        self.assertEqual(result, 1048576)
+
+    def test_file_size_cached(self):
+        """Test that file_size is cached after first access"""
+        data_product = DataProduct(self.client, **TEST_DATA_PRODUCT)
+
+        # Track call count
+        call_count = 0
+
+        def mock_head(url, timeout):
+            nonlocal call_count
+            call_count += 1
+            return type(
+                "Response",
+                (),
+                {"status_code": 200, "headers": {"Content-Length": "2048"}},
+            )()
+
+        self.client.session.head = mock_head
+
+        # Access file_size twice
+        first_result = data_product.file_size
+        second_result = data_product.file_size
+
+        # Assert that the value is cached and HEAD was called only once
+        self.assertEqual(first_result, 2048)
+        self.assertEqual(second_result, 2048)
+        self.assertEqual(call_count, 1)
+
+    def test_file_size_401_with_token_refresh(self):
+        """Test file_size retries after token refresh on 401 error"""
+        data_product = DataProduct(self.client, **TEST_DATA_PRODUCT)
+
+        # Mock 401 response first, then 200 after refresh
+        call_count = 0
+
+        def mock_head(url, timeout):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                return type("Response", (), {"status_code": 401})()
+            return type(
+                "Response",
+                (),
+                {"status_code": 200, "headers": {"Content-Length": "4096"}},
+            )()
+
+        self.client.session.head = mock_head
+        self.client._refresh_access_token = lambda: True
+
+        result = data_product.file_size
+
+        # Assert that file size is returned after token refresh
+        self.assertEqual(result, 4096)
+        self.assertEqual(call_count, 2)
+
+    def test_file_size_401_with_api_key(self):
+        """Test file_size falls back to API key after token refresh fails"""
+        data_product = DataProduct(self.client, **TEST_DATA_PRODUCT)
+
+        # Mock 401 responses, then 200 with API key
+        call_count = 0
+        urls_called = []
+
+        def mock_head(url, timeout):
+            nonlocal call_count
+            call_count += 1
+            urls_called.append(url)
+            if "API_KEY=" in url:
+                return type(
+                    "Response",
+                    (),
+                    {"status_code": 200, "headers": {"Content-Length": "4096"}},
+                )()
+            return type("Response", (), {"status_code": 401})()
+
+        self.client.session.head = mock_head
+        self.client._refresh_access_token = lambda: False  # Refresh fails
+
+        # Set API key in environment
+        os.environ["D2S_API_KEY"] = "test_api_key"
+
+        try:
+            result = data_product.file_size
+
+            # Assert that file size is returned after API key retry
+            self.assertEqual(result, 4096)
+            self.assertIn("API_KEY=test_api_key", urls_called[-1])
+        finally:
+            del os.environ["D2S_API_KEY"]
+
+    def test_file_size_401_no_api_key(self):
+        """Test file_size returns None on 401 without API key"""
+        data_product = DataProduct(self.client, **TEST_DATA_PRODUCT)
+
+        # Mock 401 response
+        mock_response = type("Response", (), {"status_code": 401})()
+        self.client.session.head = lambda url, timeout: mock_response
+        self.client._refresh_access_token = lambda: False
+
+        # Ensure no API key is set
+        if "D2S_API_KEY" in os.environ:
+            del os.environ["D2S_API_KEY"]
+
+        result = data_product.file_size
+
+        # Assert that None is returned
+        self.assertIsNone(result)
+
+    def test_file_size_network_error(self):
+        """Test file_size returns None on network error"""
+        data_product = DataProduct(self.client, **TEST_DATA_PRODUCT)
+
+        # Mock network error
+        def mock_head(url, timeout):
+            raise Exception("Connection timeout")
+
+        self.client.session.head = mock_head
+
+        result = data_product.file_size
+
+        # Assert that None is returned on error
+        self.assertIsNone(result)
+
+    def test_file_size_no_content_length(self):
+        """Test file_size returns None when Content-Length header is missing"""
+        data_product = DataProduct(self.client, **TEST_DATA_PRODUCT)
+
+        # Mock response without Content-Length header
+        mock_response = type("Response", (), {"status_code": 200, "headers": {}})()
+        self.client.session.head = mock_response
+
+        self.client.session.head = lambda url, timeout: mock_response
+
+        result = data_product.file_size
+
+        # Assert that None is returned when header is missing
+        self.assertIsNone(result)

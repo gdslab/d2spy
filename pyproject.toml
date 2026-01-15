@@ -1,12 +1,12 @@
 [tool.poetry]
 name = "d2spy"
-version = "0.4.1"
+version = "0.4.2"
 license = "MIT License"
 description = "Python package for interacting with a Data to Science instance."
 authors = [
     "Jinha Jung <jinha@purdue.edu>",
-    "Ben Hancock <hancocb@purdue.edu>",
-    "Minyoung Jung <jung411@purdue.edu>"
+    "Minyoung Jung <jung411@purdue.edu>",
+    "Ben Hancock <hancocb@purdue.edu>"
 ]
 readme = "README.md"
 keywords = ["python", "data to science", "uas"]
