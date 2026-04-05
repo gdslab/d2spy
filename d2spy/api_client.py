@@ -203,3 +203,20 @@ class APIClient:
             response.raise_for_status()
 
         return response.json()
+
+    def make_delete_request(self, endpoint: str, **kwargs) -> Dict[Any, Any]:
+        """Make DELETE request to D2S API.
+
+        Args:
+            endpoint (str): D2S endpoint for request.
+
+        Returns:
+            Dict: JSON response from request.
+        """
+        response = self._make_request_with_retry("DELETE", endpoint, **kwargs)
+
+        if response.status_code != 200:
+            pretty_print_response(response)
+            response.raise_for_status()
+
+        return response.json()

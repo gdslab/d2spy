@@ -253,8 +253,6 @@ class TestAuth(TestCase):
         cleared_cookies = []
 
         # Mock the cookie jar clear method to track what gets cleared
-        session.cookies.clear
-
         def mock_clear(domain=None, path=None, name=None):
             if name:
                 cleared_cookies.append(name)
@@ -452,3 +450,28 @@ class TestAuth(TestCase):
 
         # Assert that session.close was called
         session.close.assert_called_once()
+
+    @patch("d2spy.auth.requests.get")
+    @patch("d2spy.auth.requests.post")
+    @patch.dict("os.environ", {}, clear=True)
+    def test_login_failure_returns_none(self, mock_post, mock_get_init):
+        """Test that login returns None when server returns non-200/non-401."""
+        base_url = "https://valid-d2s-url.org"
+
+        # Mock valid health check
+        mock_get_init_response = Mock()
+        mock_get_init_response.status_code = 200
+        mock_get_init.return_value = mock_get_init_response
+
+        # Mock POST response: 500 Internal Server Error
+        mock_post_response = Mock()
+        mock_post_response.status_code = 500
+        mock_post_response.json.side_effect = ValueError("No JSON")
+        mock_post_response.text = "Internal Server Error"
+        mock_post.return_value = mock_post_response
+
+        auth = Auth(base_url)
+        result = auth.login(email="user@example.com", password="wrongpassword")
+
+        # Login should return None on server error
+        self.assertIsNone(result)

@@ -3,6 +3,8 @@ from unittest.mock import patch, Mock
 import threading
 from http.cookiejar import Cookie
 
+from requests.exceptions import HTTPError
+
 from d2spy.api_client import APIClient
 
 
@@ -260,6 +262,8 @@ class TestAPIClient(TestCase):
         # Create mock response: 401 Unauthorized
         mock_401_response = Mock()
         mock_401_response.status_code = 401
+        mock_401_response.json.return_value = {"detail": "Unauthorized"}
+        mock_401_response.raise_for_status.side_effect = HTTPError("401 Client Error")
 
         # Create mock session
         mock_session = MockSession()
@@ -277,9 +281,7 @@ class TestAPIClient(TestCase):
         client = APIClient("http://example.com", mock_session)
 
         # Make a POST request directly to refresh endpoint
-        with self.assertRaises(
-            Exception
-        ):  # Should raise due to 401, not ValueError from refresh failure
+        with self.assertRaises(HTTPError):
             client.make_post_request("/api/v1/auth/refresh-token")
 
         # Assert only one POST call was made (no retry loop)
@@ -291,6 +293,8 @@ class TestAPIClient(TestCase):
         # Create mock response: 500 Internal Server Error
         mock_500_response = Mock()
         mock_500_response.status_code = 500
+        mock_500_response.json.return_value = {"detail": "Internal Server Error"}
+        mock_500_response.raise_for_status.side_effect = HTTPError("500 Server Error")
 
         # Create mock session
         mock_session = MockSession()
@@ -308,7 +312,7 @@ class TestAPIClient(TestCase):
         client = APIClient("http://example.com", mock_session)
 
         # Make a GET request that returns 500 error
-        with self.assertRaises(Exception):  # Should raise due to 500 error
+        with self.assertRaises(HTTPError):
             client.make_get_request("/api/v1/data")
 
         # Assert refresh endpoint was not called (not a 401 error)

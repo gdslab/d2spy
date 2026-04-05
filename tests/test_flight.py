@@ -15,7 +15,7 @@ from d2spy.models.flight import Flight
 from d2spy.models.project import Project
 from d2spy.models.raw_data import RawData
 
-from example_data import TEST_FLIGHT, TEST_PROJECT
+from example_data import TEST_DATA_PRODUCT, TEST_FLIGHT, TEST_PROJECT
 
 
 class TestFlight(TestCase):
@@ -168,6 +168,39 @@ class TestFlight(TestCase):
             self.assertEqual(
                 mock_uploader.upload_chunk.call_count, 5
             )  # 50 MiB / 10 MiB
+
+    @patch("d2spy.api_client.APIClient.make_get_request")
+    def test_get_data_product(self, mock_make_get_request):
+        # Setup a test session
+        base_url = "https://example.com"
+        session = Session()
+        session.cookies.set("access_token", "fake_token")
+
+        # Instantiate the APIClient with a test URL and the test session
+        client = APIClient(base_url, session)
+
+        # Test flight data
+        flight = Flight(client, **TEST_FLIGHT)
+        flight_id = TEST_FLIGHT["id"]
+        project_id = TEST_FLIGHT["project_id"]
+        data_product_id = TEST_DATA_PRODUCT["id"]
+
+        # Mock response from the GET request for a single data product
+        mock_make_get_request.return_value = TEST_DATA_PRODUCT
+
+        # Get a single data product by ID
+        data_product = flight.get_data_product(data_product_id)
+
+        # Assert that the correct URL was used in the GET request
+        mock_make_get_request.assert_called_once_with(
+            f"/api/v1/projects/{project_id}/flights/{flight_id}"
+            f"/data_products/{data_product_id}"
+        )
+
+        # Assert that the response data matches the test data product
+        self.assertIsInstance(data_product, DataProduct)
+        self.assertEqual(data_product.data_type, TEST_DATA_PRODUCT["data_type"])
+        self.assertEqual(str(data_product.id), TEST_DATA_PRODUCT["id"])
 
     @patch("d2spy.api_client.APIClient.make_get_request")
     def test_get_data_products(self, mock_make_get_request):

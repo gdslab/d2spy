@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date
 
 # Example data product response from API
 TEST_DATA_PRODUCT = {
@@ -42,7 +42,7 @@ TEST_DATA_PRODUCT = {
 
 # Example flight response from API
 TEST_FLIGHT = {
-    "acquisition_date": str(date.today()),
+    "acquisition_date": "2024-05-01",
     "altitude": 40,
     "side_overlap": 85,
     "forward_overlap": 85,
@@ -63,7 +63,7 @@ TEST_PROJECT = {
     "id": "24f77778-08d4-47d6-86a6-c6e32848370f",
     "title": "Test Project",
     "description": "Project for testing d2spy package.",
-    "deactivated_at": False,
+    "deactivated_at": None,
     "field": {
         "type": "Feature",
         "geometry": {
@@ -80,10 +80,10 @@ TEST_PROJECT = {
         },
     },
     "flight_count": 0,
-    "harvest_date": date.today(),
+    "harvest_date": date(2024, 8, 1),
     "is_active": True,
     "location_id": "3a3cd25-450a-48e5-86a8-55bb3fa54838",
-    "planting_date": date.today() - timedelta(days=90),
+    "planting_date": date(2024, 5, 1),
     "role": "manager",
     "team_id": None,
 }
@@ -286,6 +286,65 @@ TEST_FEATURE_COLLECTION = [
         },
     },
 ]
+
+# Example annotation response from API
+TEST_ANNOTATION = {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "description": "Field boundary annotation",
+    "geom": {
+        "type": "Feature",
+        "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+                [
+                    [-86.944, 41.444],
+                    [-86.943, 41.444],
+                    [-86.943, 41.443],
+                    [-86.944, 41.443],
+                    [-86.944, 41.444],
+                ]
+            ],
+        },
+        "properties": {},
+    },
+    "data_product_id": "2c2d5ce4-5611-4108-9f66-83ca51f5f52b",
+    "created_by_id": "dd18a0ea-d6fe-49e2-b16b-cb0faa7548b5",
+    "visibility": "owner",
+    "style": None,
+    "created_at": "2026-04-01T12:00:00.000Z",
+    "updated_at": "2026-04-01T12:00:00.000Z",
+    "attachments": [],
+    "tag_rows": [
+        {
+            "id": "f1e2d3c4-b5a6-7890-abcd-ef1234567890",
+            "annotation_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+            "tag_id": "11111111-2222-3333-4444-555555555555",
+            "created_at": "2026-04-01T12:00:00.000Z",
+            "updated_at": "2026-04-01T12:00:00.000Z",
+            "tag": {"id": "11111111-2222-3333-4444-555555555555", "name": "boundary"},
+        }
+    ],
+    "created_by": {
+        "id": "dd18a0ea-d6fe-49e2-b16b-cb0faa7548b5",
+        "first_name": "Test",
+        "last_name": "User",
+    },
+}
+
+# Example annotation attachment response from API
+TEST_ANNOTATION_ATTACHMENT = {
+    "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+    "original_filename": "photo.jpg",
+    "filepath": "/static/projects/24f77778/annotations/a1b2c3d4/photo.jpg",
+    "content_type": "image/jpeg",
+    "size_bytes": 102400,
+    "width_px": 1920,
+    "height_px": 1080,
+    "duration_seconds": None,
+    "annotation_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "created_at": "2026-04-01T12:00:00.000Z",
+    "updated_at": "2026-04-01T12:00:00.000Z",
+}
 
 TEST_USER = {
     "email": "d2suser@example.com",

@@ -11,33 +11,39 @@ from example_data import TEST_FLIGHT
 
 
 class TestFlightCollection(TestCase):
-    def test_filter_by_date(self):
-        # Setup a test session
+    def setUp(self):
         base_url = "https://example.com"
         session = Session()
         session.cookies.set("access_token", "fake_token")
+        self.client = APIClient(base_url, session)
 
-        # Instantiate the APIClient with a test URL and the test session
-        client = APIClient(base_url, session)
-
-        # Test flight collection
+    def test_filter_by_date(self):
         collection = FlightCollection(
             collection=[
                 Flight(
-                    client, **{**TEST_FLIGHT, "acquisition_date": date(2024, 4, 30)}
-                ),
-                Flight(client, **{**TEST_FLIGHT, "acquisition_date": date(2024, 5, 1)}),
-                Flight(
-                    client, **{**TEST_FLIGHT, "acquisition_date": date(2024, 5, 15)}
+                    self.client,
+                    **{**TEST_FLIGHT, "acquisition_date": date(2024, 4, 30)},
                 ),
                 Flight(
-                    client, **{**TEST_FLIGHT, "acquisition_date": date(2024, 5, 31)}
+                    self.client,
+                    **{**TEST_FLIGHT, "acquisition_date": date(2024, 5, 1)},
                 ),
-                Flight(client, **{**TEST_FLIGHT, "acquisition_date": date(2024, 6, 1)}),
+                Flight(
+                    self.client,
+                    **{**TEST_FLIGHT, "acquisition_date": date(2024, 5, 15)},
+                ),
+                Flight(
+                    self.client,
+                    **{**TEST_FLIGHT, "acquisition_date": date(2024, 5, 31)},
+                ),
+                Flight(
+                    self.client,
+                    **{**TEST_FLIGHT, "acquisition_date": date(2024, 6, 1)},
+                ),
             ]
         )
 
-        # Find flights with acquistion date during May 2024
+        # Find flights with acquisition date during May 2024
         filtered_collection = collection.filter_by_date(
             start_date=date(2024, 5, 1), end_date=date(2024, 5, 31)
         )
@@ -51,29 +57,20 @@ class TestFlightCollection(TestCase):
             self.assertIsInstance(flight, Flight)
 
     def test_filter_by_sensor(self):
-        # Setup a test session
-        base_url = "https://example.com"
-        session = Session()
-        session.cookies.set("access_token", "fake_token")
-
-        # Instantiate the APIClient with a test URL and the test session
-        client = APIClient(base_url, session)
-
-        # Test flight collection
         collection = FlightCollection(
             collection=[
-                Flight(client, **{**TEST_FLIGHT, "sensor": "RGB"}),
-                Flight(client, **{**TEST_FLIGHT, "sensor": "RGB"}),
-                Flight(client, **{**TEST_FLIGHT, "sensor": "Multispectral"}),
-                Flight(client, **{**TEST_FLIGHT, "sensor": "LiDAR"}),
-                Flight(client, **{**TEST_FLIGHT, "sensor": "Other"}),
+                Flight(self.client, **{**TEST_FLIGHT, "sensor": "RGB"}),
+                Flight(self.client, **{**TEST_FLIGHT, "sensor": "RGB"}),
+                Flight(self.client, **{**TEST_FLIGHT, "sensor": "Multispectral"}),
+                Flight(self.client, **{**TEST_FLIGHT, "sensor": "LiDAR"}),
+                Flight(self.client, **{**TEST_FLIGHT, "sensor": "Other"}),
             ]
         )
 
         # Find flights with sensor "RGB"
         filtered_collection = collection.filter_by_sensor("RGB")
 
-        # filter_by_date should return new FlightCollection with results
+        # filter_by_sensor should return new FlightCollection with results
         self.assertIsInstance(filtered_collection, FlightCollection)
         # Two flights with "RGB" sensor
         self.assertEqual(len(filtered_collection), 2)
@@ -92,3 +89,30 @@ class TestFlightCollection(TestCase):
 
         # Should find match even with typo
         self.assertEqual(len(filtered_collection3), 1)
+
+    def test_filter_by_date_no_match(self):
+        collection = FlightCollection(
+            collection=[
+                Flight(
+                    self.client,
+                    **{**TEST_FLIGHT, "acquisition_date": date(2024, 5, 1)},
+                ),
+            ]
+        )
+
+        filtered = collection.filter_by_date(
+            start_date=date(2025, 1, 1), end_date=date(2025, 12, 31)
+        )
+        self.assertEqual(len(filtered), 0)
+        self.assertIsInstance(filtered, FlightCollection)
+
+    def test_empty_collection(self):
+        collection = FlightCollection()
+
+        self.assertEqual(len(collection), 0)
+
+        filtered = collection.filter_by_date(
+            start_date=date(2024, 1, 1), end_date=date(2024, 12, 31)
+        )
+        self.assertEqual(len(filtered), 0)
+        self.assertIsInstance(filtered, FlightCollection)

@@ -19,26 +19,24 @@ from example_data import (
 
 
 class TestProject(TestCase):
-    @patch("d2spy.api_client.APIClient.make_post_request")
-    def test_add_flight(self, mock_make_post_request):
-        # Setup a test session
+    def setUp(self):
         base_url = "https://example.com"
         session = Session()
         session.cookies.set("access_token", "fake_token")
+        self.client = APIClient(base_url, session)
 
-        # Instantiate the APIClient with a test URL and the test session
-        client = APIClient(base_url, session)
-
+    @patch("d2spy.api_client.APIClient.make_post_request")
+    def test_add_flight(self, mock_make_post_request):
         # Test project data
         project_id = TEST_PROJECT["id"]
-        project = Project(client, **TEST_PROJECT)
+        project = Project(self.client, **TEST_PROJECT)
 
         # User ID for pilot
         pilot_id = "dd18a0ea-d6fe-49e2-b16b-cb0faa7548b5"
 
         # Test flight data
         flight_data = {
-            "acquisition_date": date.today(),
+            "acquisition_date": date(2024, 5, 1),
             "altitude": 40,
             "side_overlap": 85,
             "forward_overlap": 85,
@@ -50,7 +48,7 @@ class TestProject(TestCase):
 
         # Mock response from the POST request to create new flight
         mock_response_data = {
-            "acquisition_date": str(date.today()),
+            "acquisition_date": str(date(2024, 5, 1)),
             "altitude": flight_data["altitude"],
             "side_overlap": flight_data["side_overlap"],
             "forward_overlap": flight_data["forward_overlap"],
@@ -94,16 +92,8 @@ class TestProject(TestCase):
     @patch("d2spy.api_client.APIClient.make_post_request")
     @patch("d2spy.api_client.APIClient.make_get_request")
     def test_add_flight_get_pilot(self, mock_make_get_request, mock_make_post_request):
-        # Setup a test session
-        base_url = "https://example.com"
-        session = Session()
-        session.cookies.set("access_token", "fake_token")
-
-        # Instantiate APIClient with test URL and test session
-        client = APIClient(base_url, session)
-
         # Test project data
-        project = Project(client, **TEST_PROJECT)
+        project = Project(self.client, **TEST_PROJECT)
 
         # Mock response from the GET request for current user model
         mock_response_data = {
@@ -126,7 +116,7 @@ class TestProject(TestCase):
 
         # Test flight data without a pilot ID
         flight_data = {
-            "acquisition_date": date.today(),
+            "acquisition_date": date(2024, 5, 1),
             "altitude": 40,
             "side_overlap": 85,
             "forward_overlap": 85,
@@ -143,21 +133,13 @@ class TestProject(TestCase):
 
     @patch("d2spy.api_client.APIClient.make_get_request")
     def test_get_flight(self, mock_make_get_request):
-        # Setup a test session
-        base_url = "https://example.com"
-        session = Session()
-        session.cookies.set("access_token", "fake_token")
-
-        # Instantiate APIClient with test URL and test session
-        client = APIClient(base_url, session)
-
         # Test project data
-        project = Project(client, **TEST_PROJECT)
+        project = Project(self.client, **TEST_PROJECT)
         project_id = project.id
 
         # Test flight
         flight_data = {
-            "acquisition_date": str(date.today()),
+            "acquisition_date": str(date(2024, 5, 1)),
             "altitude": 40,
             "side_overlap": 85,
             "forward_overlap": 85,
@@ -208,21 +190,13 @@ class TestProject(TestCase):
 
     @patch("d2spy.api_client.APIClient.make_get_request")
     def test_get_flights(self, mock_make_get_request):
-        # Setup a test session
-        base_url = "https://example.com"
-        session = Session()
-        session.cookies.set("access_token", "fake_token")
-
-        # Instantiate APIClient with test URL and test session
-        client = APIClient(base_url, session)
-
         # Test project data
-        project = Project(client, **TEST_PROJECT)
+        project = Project(self.client, **TEST_PROJECT)
         project_id = project.id
 
         # Test flight
         flight_data = {
-            "acquisition_date": str(date.today()),
+            "acquisition_date": str(date(2024, 5, 1)),
             "altitude": 40,
             "side_overlap": 85,
             "forward_overlap": 85,
@@ -279,16 +253,8 @@ class TestProject(TestCase):
 
     @patch("d2spy.api_client.APIClient.make_get_request")
     def test_get_project_boundary(self, mock_make_get_request):
-        # Setup a test session
-        base_url = "https://example.com"
-        session = Session()
-        session.cookies.set("access_token", "fake_token")
-
-        # Instantiate APIClient with test URL and test session
-        client = APIClient(base_url, session)
-
         # Test project data
-        project = Project(client, **TEST_MULTI_PROJECT)
+        project = Project(self.client, **TEST_MULTI_PROJECT)
 
         # Mock response from the GET request for a project object
         mock_response_data = {**TEST_PROJECT}
@@ -305,16 +271,8 @@ class TestProject(TestCase):
 
     @patch("d2spy.api_client.APIClient.make_post_request")
     def test_add_map_layer(self, mock_make_post_request):
-        # Setup a test session
-        base_url = "https://example.com"
-        session = Session()
-        session.cookies.set("access_token", "fake_token")
-
-        # Instantiate APIClient with test URL and test session
-        client = APIClient(base_url, session)
-
         # Test project data
-        project = Project(client, **TEST_PROJECT)
+        project = Project(self.client, **TEST_PROJECT)
         project_id = project.id
 
         # Test map layer data - feature collection with two features
@@ -374,8 +332,7 @@ class TestProject(TestCase):
                 "geojson": map_layer_feature_collection,
             },
         )
-        print(response_feature_collection)
-        # Assert that the response data matches the test flight data
+        # Assert that the response data matches the test map layer data
         self.assertIsInstance(response_feature_collection, Dict)
         self.assertIn("type", response_feature_collection)
         self.assertEqual(response_feature_collection["type"], "FeatureCollection")
@@ -387,16 +344,8 @@ class TestProject(TestCase):
 
     @patch("d2spy.api_client.APIClient.make_get_request")
     def test_get_map_layers(self, mock_make_get_request):
-        # Setup a test session
-        base_url = "https://example.com"
-        session = Session()
-        session.cookies.set("access_token", "fake_token")
-
-        # Instantiate APIClient with test URL and test session
-        client = APIClient(base_url, session)
-
         # Test project data
-        project = Project(client, **TEST_PROJECT)
+        project = Project(self.client, **TEST_PROJECT)
         project_id = project.id
 
         # Mock response from the GET request for map layers
@@ -424,16 +373,8 @@ class TestProject(TestCase):
 
     @patch("d2spy.api_client.APIClient.make_put_request")
     def test_update(self, mock_make_put_request):
-        # Setup a test session
-        base_url = "https://example.com"
-        session = Session()
-        session.cookies.set("access_token", "fake_token")
-
-        # Instantiate APIClient with test URL and test session
-        client = APIClient(base_url, session)
-
         # Test project data
-        project = Project(client, **TEST_PROJECT)
+        project = Project(self.client, **TEST_PROJECT)
         project_id = TEST_PROJECT["id"]
 
         old_title = TEST_PROJECT["title"]

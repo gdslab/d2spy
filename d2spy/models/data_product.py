@@ -2,7 +2,7 @@ import os
 import re
 import time
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional, Union
 from uuid import UUID
 
 # Geo dependencies are optional
@@ -16,6 +16,8 @@ except ImportError:
 
 from d2spy import models, schemas
 from d2spy.api_client import APIClient
+from d2spy.extras.utils import ensure_dict, ensure_list_of_dict
+from d2spy.models.annotation_collection import AnnotationCollection
 from d2spy.schemas.stac_properties import STACProperties, STACEOProperties
 from d2spy.utils.logging_config import get_logger
 
@@ -127,11 +129,118 @@ class DataProduct:
         Returns:
             Optional[int]: File size in bytes, or None if unavailable.
         """
-        if hasattr(self, "_file_size"):
+        if self._file_size is not None:
             return self._file_size
 
         self._file_size = self._fetch_file_size()
         return self._file_size
+
+    def _get_project_id(self) -> Optional[str]:
+        """Extract project ID from the data product URL.
+
+        Returns:
+            Optional[str]: Project ID or None if not found.
+        """
+        match = re.search(r"/projects/([a-f0-9\-]+)/", self.url)
+        if match:
+            return match.group(1)
+        return None
+
+    def add_annotation(
+        self,
+        description: str,
+        geom: Dict[Any, Any],
+        tags: Optional[List[str]] = None,
+        visibility: Union[Literal["owner", "project"], str] = "owner",
+        style: Optional[Dict[Any, Any]] = None,
+    ) -> "models.Annotation":
+        """Create a new annotation on this data product.
+
+        Args:
+            description (str): Annotation description text.
+            geom (Dict[Any, Any]): GeoJSON Feature for the annotation geometry.
+            tags (Optional[List[str]]): List of tag names. Defaults to None.
+            visibility (Union[Literal["owner", "project"], str]): Visibility setting.
+                Defaults to "owner".
+            style (Optional[Dict[Any, Any]]): Custom styling metadata.
+
+        Returns:
+            models.Annotation: The newly created annotation.
+        """
+        project_id = self._get_project_id()
+        endpoint = (
+            f"/api/v1/projects/{project_id}"
+            f"/flights/{self.flight_id}"
+            f"/data_products/{self.id}/annotations"
+        )
+        data: Dict[str, Any] = {
+            "description": description,
+            "geom": geom,
+            "visibility": visibility,
+        }
+        if tags is not None:
+            data["tags"] = tags
+        if style is not None:
+            data["style"] = style
+
+        response_data = ensure_dict(self.client.make_post_request(endpoint, json=data))
+        annotation_schema = schemas.Annotation.from_dict(response_data)
+
+        return models.Annotation(
+            self.client,
+            _project_id=project_id,
+            _flight_id=str(self.flight_id),
+            **annotation_schema.__dict__,
+        )
+
+    def get_annotations(self) -> AnnotationCollection:
+        """Return all annotations for this data product.
+
+        Returns:
+            AnnotationCollection: Collection of annotations.
+        """
+        project_id = self._get_project_id()
+        endpoint = (
+            f"/api/v1/projects/{project_id}"
+            f"/flights/{self.flight_id}"
+            f"/data_products/{self.id}/annotations"
+        )
+        response_data = ensure_list_of_dict(self.client.make_get_request(endpoint))
+        annotations = [
+            models.Annotation(
+                self.client,
+                _project_id=project_id,
+                _flight_id=str(self.flight_id),
+                **schemas.Annotation.from_dict(annotation).__dict__,
+            )
+            for annotation in response_data
+        ]
+        return AnnotationCollection(collection=annotations)
+
+    def get_annotation(self, annotation_id: str) -> "models.Annotation":
+        """Return a single annotation by ID.
+
+        Args:
+            annotation_id (str): Annotation ID.
+
+        Returns:
+            models.Annotation: The annotation.
+        """
+        project_id = self._get_project_id()
+        endpoint = (
+            f"/api/v1/projects/{project_id}"
+            f"/flights/{self.flight_id}"
+            f"/data_products/{self.id}/annotations/{annotation_id}"
+        )
+        response_data = ensure_dict(self.client.make_get_request(endpoint))
+
+        annotation_schema = schemas.Annotation.from_dict(response_data)
+        return models.Annotation(
+            self.client,
+            _project_id=project_id,
+            _flight_id=str(self.flight_id),
+            **annotation_schema.__dict__,
+        )
 
     def clip(
         self, geojson_feature: Dict[Any, Any], out_raster: str, export_vrt: bool = False

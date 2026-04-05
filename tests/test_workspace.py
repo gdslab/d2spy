@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date
 from unittest import TestCase
 from unittest.mock import patch, Mock
 
@@ -149,8 +149,8 @@ class TestWorkspace(TestCase):
                     ],
                 },
             },
-            "harvest_date": date.today(),
-            "planting_date": date.today() - timedelta(days=90),
+            "harvest_date": date(2024, 8, 1),
+            "planting_date": date(2024, 5, 1),
         }
 
         # Mock response from the POST request to create new project
@@ -190,7 +190,6 @@ class TestWorkspace(TestCase):
                 "harvest_date": project_data["harvest_date"].isoformat(),
             },
         )
-        print(project)
         # Assert that the response data matches the test project data
         self.assertIsInstance(project, Project)
         self.assertEqual(project.title, project_data["title"])
@@ -227,8 +226,8 @@ class TestWorkspace(TestCase):
                     ],
                 },
             },
-            "harvest_date": date.today(),
-            "planting_date": date.today() - timedelta(days=90),
+            "harvest_date": date(2024, 8, 1),
+            "planting_date": date(2024, 5, 1),
         }
         project_id = "24f77778-08d4-47d6-86a6-c6e32848370f"
 
