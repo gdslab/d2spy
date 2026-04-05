@@ -11,3 +11,4 @@ The following guides demonstrate how **d2spy** can be used to interact with an i
 7. 3DEP search by D2S projects ([notebook](./notebooks/07_3dep_search_by_d2s_projects))
 8. 3DEP search by polygon and clip with PDAL ([notebook](./notebooks/08_3dep_search_by_polygon_and_clip_with_pdal))
 9. NAIP search by D2S projects and clip ([notebook](./notebooks/09_naip_search_by_d2s_projects_and_clip))
+10. Working with annotations ([notebook](./notebooks/10_working_with_annotations))

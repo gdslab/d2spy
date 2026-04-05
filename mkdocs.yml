@@ -14,6 +14,8 @@ nav:
   - API Reference:
       - api_reference.md
       - api_client module: api_client.md
+      - annotation module: annotation.md
+      - annotation_collection module: annotation_collection.md
       - auth module: auth.md
       - data_product module: data_product.md
       - data_product_collection module: data_product_collection.md
