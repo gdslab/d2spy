@@ -73,6 +73,7 @@ class Uploader(BaseUploader):
             headers=self.get_url_creation_headers(),
             cookies=self.get_url_creation_cookies(),
             verify=self.verify_tls_cert,
+            timeout=self.timeout,
         )
         url = resp.headers.get("location")
         if url is None:

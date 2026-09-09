@@ -9,6 +9,10 @@ from d2spy.extras.third_party.tusclient.exceptions import (
     TusCommunicationError,
 )
 
+# Default (connect, read) timeout in seconds. The read value bounds the whole
+# sendall() of a chunk, so it must cover uploading 10 MiB.
+DEFAULT_TIMEOUT = (30, 300)
+
 
 # Catches requests exceptions and throws custom tuspy errors.
 def catch_requests_error(func):
@@ -45,6 +49,7 @@ class BaseTusRequest:
         self.status_code = None
         self.response_content = None
         self.verify_tls_cert = bool(uploader.verify_tls_cert)
+        self.timeout = getattr(uploader, "timeout", DEFAULT_TIMEOUT)
         self.file = uploader.get_file_stream()
         self.file.seek(uploader.offset)
 
@@ -88,6 +93,7 @@ class TusRequest(BaseTusRequest):
                 headers=self._request_headers,
                 cookies=self._request_cookies,
                 verify=self.verify_tls_cert,
+                timeout=self.timeout,
             )
             self.status_code = resp.status_code
             self.response_content = resp.content

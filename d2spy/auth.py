@@ -7,27 +7,36 @@ import requests
 
 from d2spy.extras.utils import pretty_print_response
 from d2spy.models.user import User
-from d2spy.schemas.session import D2SpySession
+from d2spy.schemas.session import DEFAULT_TIMEOUT, D2SpySession, TimeoutType
+
+# Shorter timeout for the health check, which blocks everything else.
+HEALTH_CHECK_TIMEOUT: TimeoutType = (5, 10)
 
 
 class Auth:
     """Authenticates with D2S."""
 
-    def __init__(self, base_url: str) -> None:
+    def __init__(
+        self, base_url: str, timeout: Optional[TimeoutType] = DEFAULT_TIMEOUT
+    ) -> None:
         """Constructor for Auth class.
 
         Args:
             base_url (str): Base URL for D2S instance.
+            timeout (Optional[TimeoutType]): Default (connect, read) timeout in
+                seconds for requests made by this instance and its session.
+                Pass None to block indefinitely.
 
         Raises:
             ValueError: Raised if unable to communicate with host.
         """
         self.base_url: str = base_url
+        self.timeout: Optional[TimeoutType] = timeout
 
         if is_valid_base_url(self.base_url) is False:
             raise ValueError("unable to connect to provided host")
 
-        self.session: D2SpySession = D2SpySession()
+        self.session: D2SpySession = D2SpySession(timeout=timeout)
 
     def login(
         self,
@@ -67,7 +76,7 @@ class Auth:
         # URL for D2S access-token endpoint
         url = f"{self.base_url}/api/v1/auth/access-token"
         # Post credentials to access-token endpoint
-        response = requests.post(url, data=credentials)
+        response = requests.post(url, data=credentials, timeout=self.timeout)
         # JWT access token returned for successful request
         if response.status_code == 200 and "access_token" in response.cookies:
             # Normalize cookies to be scoped to the API host to avoid duplicates
@@ -151,21 +160,23 @@ class Auth:
             return None
 
 
-def is_valid_base_url(base_url: str) -> bool:
+def is_valid_base_url(
+    base_url: str, timeout: Optional[TimeoutType] = HEALTH_CHECK_TIMEOUT
+) -> bool:
     """Return true if base_url returns HTTP 200 else false.
 
     Args:
         base_url (str): Base URL for D2S instance.
+        timeout (Optional[TimeoutType]): (connect, read) timeout in seconds for
+            the health check request. Pass None to block indefinitely.
 
     Returns:
         bool: Returns True if D2S instance returns status OK, otherwise False
     """
-    response: Optional[requests.Response] = None
     try:
-        response = requests.get(f"{base_url}/api/v1/health")
-    except requests.exceptions.ConnectionError:
-        response = None
-    finally:
-        if response and response.status_code == 200:
-            return True
-    return False
+        response = requests.get(f"{base_url}/api/v1/health", timeout=timeout)
+    except requests.exceptions.RequestException:
+        # Connection errors, timeouts, and malformed URLs all mean unusable.
+        return False
+
+    return response.status_code == 200

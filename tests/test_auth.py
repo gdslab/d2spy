@@ -4,7 +4,8 @@ from unittest.mock import patch, Mock
 
 import requests
 
-from d2spy.auth import Auth
+from d2spy.auth import Auth, HEALTH_CHECK_TIMEOUT
+from d2spy.schemas.session import DEFAULT_TIMEOUT
 from example_data import TEST_USER
 
 
@@ -21,7 +22,9 @@ class TestAuth(TestCase):
         auth = Auth(base_url)
 
         # Assert that the correct URL was used to validate the base url
-        mock_get.assert_called_once_with(f"{base_url}/api/v1/health")
+        mock_get.assert_called_once_with(
+            f"{base_url}/api/v1/health", timeout=HEALTH_CHECK_TIMEOUT
+        )
 
         # Assert that the Auth instance returned a requests session
         self.assertIsInstance(auth.session, requests.Session)
@@ -42,7 +45,44 @@ class TestAuth(TestCase):
         self.assertEqual(str(context.exception), "unable to connect to provided host")
 
         # Assert that the correct URL was used to validate the base url
-        mock_get.assert_called_once_with(f"{base_url}/api/v1/health")
+        mock_get.assert_called_once_with(
+            f"{base_url}/api/v1/health", timeout=HEALTH_CHECK_TIMEOUT
+        )
+
+    @patch("d2spy.auth.requests.get")
+    def test_auth_init_with_unresponsive_host(self, mock_get):
+        # A host that accepts the connection but never answers raises Timeout
+        mock_get.side_effect = requests.exceptions.Timeout("timed out")
+
+        # Auth reports the failure as a ValueError rather than propagating it
+        with self.assertRaises(ValueError) as context:
+            Auth("https://unresponsive-d2s-url.org")
+
+        self.assertEqual(str(context.exception), "unable to connect to provided host")
+
+    @patch("d2spy.auth.requests.get")
+    def test_auth_init_with_malformed_url(self, mock_get):
+        # A base URL without a scheme raises MissingSchema, not ConnectionError
+        mock_get.side_effect = requests.exceptions.MissingSchema("no scheme")
+
+        with self.assertRaises(ValueError) as context:
+            Auth("invalid-d2s-url.org")
+
+        self.assertEqual(str(context.exception), "unable to connect to provided host")
+
+    @patch("d2spy.auth.requests.get")
+    def test_auth_init_accepts_custom_timeout(self, mock_get):
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_get.return_value = mock_response
+
+        # A caller may tighten or relax the timeout for the whole session
+        base_url = "https://valid-d2s-url.org"
+        auth = Auth(base_url, timeout=(1, 2))
+
+        # Assert that the session carries the requested timeout
+        self.assertEqual(auth.timeout, (1, 2))
+        self.assertEqual(auth.session.timeout, (1, 2))
 
     @patch("d2spy.auth.requests.get")
     @patch("getpass.getpass")
@@ -99,10 +139,13 @@ class TestAuth(TestCase):
         login_session = auth.login(email=user_email)
 
         # Assert that the correct URLs were called
-        mock_get_init.assert_called_once_with(f"{base_url}/api/v1/health")
+        mock_get_init.assert_called_once_with(
+            f"{base_url}/api/v1/health", timeout=HEALTH_CHECK_TIMEOUT
+        )
         mock_post.assert_called_once_with(
             f"{base_url}/api/v1/auth/access-token",
             data={"username": user_email, "password": user_password},
+            timeout=DEFAULT_TIMEOUT,
         )
         mock_get_login.assert_called_once_with(f"{base_url}/api/v1/users/current")
 
@@ -177,13 +220,16 @@ class TestAuth(TestCase):
         login_session = auth.login()
 
         # Assert that the correct URLs were called
-        mock_get_init.assert_called_once_with(f"{base_url}/api/v1/health")
+        mock_get_init.assert_called_once_with(
+            f"{base_url}/api/v1/health", timeout=HEALTH_CHECK_TIMEOUT
+        )
         mock_post.assert_called_once_with(
             f"{base_url}/api/v1/auth/access-token",
             data={
                 "username": os.environ.get("D2S_EMAIL"),
                 "password": os.environ.get("D2S_PASSWORD"),
             },
+            timeout=DEFAULT_TIMEOUT,
         )
         mock_get_login.assert_called_once_with(f"{base_url}/api/v1/users/current")
 

@@ -8,7 +8,11 @@ import hashlib
 import requests
 
 from d2spy.extras.third_party.tusclient.exceptions import TusCommunicationError
-from d2spy.extras.third_party.tusclient.request import TusRequest, catch_requests_error
+from d2spy.extras.third_party.tusclient.request import (
+    DEFAULT_TIMEOUT,
+    TusRequest,
+    catch_requests_error,
+)
 
 if TYPE_CHECKING:
     from d2spy.extras.third_party.tusclient.client import TusClient
@@ -60,6 +64,10 @@ class BaseUploader:
         - upload_checksum (bool):
             Whether or not to supply the Upload-Checksum header along with each
             chunk. Defaults to False.
+        - timeout (tuple):
+            The (connect, read) timeout in seconds for every request made by
+            this uploader. The read value must cover sending a whole chunk.
+            If not specified, it defaults to (30, 300).
 
     :Constructor Args:
         - file_path (str)
@@ -73,6 +81,7 @@ class BaseUploader:
         - retry_delay (Optional[int])
         - verify_tls_cert (Optional[bool])
         - upload_checksum (Optional[bool])
+        - timeout (Optional[tuple])
     """
 
     DEFAULT_HEADERS = {"Tus-Resumable": "1.0.0"}
@@ -95,6 +104,7 @@ class BaseUploader:
         retry_delay: int = 30,
         verify_tls_cert: bool = True,
         upload_checksum=False,
+        timeout=DEFAULT_TIMEOUT,
     ):
         if file_path is None and file_stream is None:
             raise ValueError("Either 'file_path' or 'file_stream' cannot be None.")
@@ -103,6 +113,8 @@ class BaseUploader:
             raise ValueError("Either 'url' or 'client' cannot be None.")
 
         self.verify_tls_cert = verify_tls_cert
+        # Set before __init_url_and_offset, which may issue a request.
+        self.timeout = timeout
         self.file_path = file_path
         self.file_stream = file_stream
         self.stop_at = self.get_file_size()
@@ -172,7 +184,10 @@ class BaseUploader:
         http request to the tus server to retrieve the offset.
         """
         resp = requests.head(
-            self.url, headers=self.get_headers(), verify=self.verify_tls_cert
+            self.url,
+            headers=self.get_headers(),
+            verify=self.verify_tls_cert,
+            timeout=self.timeout,
         )
         offset = resp.headers.get("upload-offset")
         if offset is None:
