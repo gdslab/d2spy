@@ -6,7 +6,6 @@ Install with: pip install d2spy[geo]
 """
 
 import os
-import subprocess
 import tempfile
 from typing import Any, Dict, List, Optional, Tuple
 from zipfile import is_zipfile, ZipFile
@@ -26,6 +25,13 @@ try:
 except ImportError:
     HAS_GEO = False
 
+# GDAL Python bindings, used only for VRT export. Not pip-installable in
+# general, so kept optional.
+try:
+    from osgeo import gdal  # type: ignore[import-not-found,import-untyped]
+except ImportError:
+    gdal = None
+
 logger = get_logger(__name__)
 
 
@@ -38,11 +44,46 @@ def require_geo():
         )
 
 
-def is_gdal_available():
-    """Check if GDAL CLI tools are available (doesn't require geo extras)."""
-    import shutil
+def is_gdal_available() -> bool:
+    """Check if the GDAL Python bindings are available."""
+    return gdal is not None
 
-    return shutil.which("gdalbuildvrt") is not None
+
+def build_vrt(src_raster: str, vrt_path: str) -> bool:
+    """Write a VRT referencing src_raster using the GDAL Python bindings.
+
+    Args:
+        src_raster: Path to the raster the VRT should reference.
+        vrt_path: Path of the VRT file to write.
+
+    Returns:
+        bool: True if the VRT was written, False if GDAL is unavailable or fails.
+    """
+    if not is_gdal_available():
+        logger.warning("GDAL Python bindings not available. Unable to export VRT file.")
+        return False
+
+    try:
+        dataset = gdal.BuildVRT(vrt_path, [src_raster])
+    except RuntimeError as e:
+        # Raised when gdal.UseExceptions() is on
+        logger.warning(f"Error exporting VRT file: {e}")
+        return False
+
+    if dataset is None:
+        # Returned when GDAL exceptions are off
+        logger.warning("Error exporting VRT file: gdal.BuildVRT returned None")
+        return False
+
+    # Dropping the reference closes the dataset and flushes the VRT to disk
+    del dataset
+    if not os.path.exists(vrt_path):
+        # GDAL can return a dataset yet write nothing, e.g. for an unwritable
+        # destination, and only reports it from the destructor.
+        logger.warning("Error exporting VRT file: no VRT was written")
+        return False
+    logger.info("VRT file exported successfully")
+    return True
 
 
 def validate_geojson_polygon_feature(geojson_data: Dict[Any, Any]) -> Dict[Any, Any]:
@@ -120,15 +161,7 @@ def clip_by_mask(
 
         # Export VRT file
         if export_vrt:
-            if is_gdal_available():
-                cmd = ["gdalbuildvrt", out_raster.replace(".tif", ".vrt")] + [in_raster]
-                try:
-                    subprocess.run(cmd, check=True)
-                    logger.info("VRT file exported successfully")
-                except subprocess.CalledProcessError as e:
-                    logger.warning(f"Error exporting VRT file: {e}")
-            else:
-                logger.warning("GDAL is not available. Unable to export VRT file.")
+            build_vrt(in_raster, out_raster.replace(".tif", ".vrt"))
 
 
 def get_exif_data(image_path: str) -> Dict:

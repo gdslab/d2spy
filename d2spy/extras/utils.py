@@ -7,7 +7,6 @@ For geospatial utilities, see d2spy.extras.geo (requires d2spy[geo]).
 
 import json
 import os
-import shutil
 from http import HTTPStatus
 from pathlib import Path
 from typing import Any, Dict, List, Union
@@ -60,9 +59,11 @@ def ensure_list_of_dict(
     return response_data
 
 
-def is_gdal_available():
-    """Check if GDAL CLI tools are available."""
-    return shutil.which("gdalbuildvrt") is not None
+def is_gdal_available() -> bool:
+    """Check if the GDAL Python bindings are available."""
+    from d2spy.extras.geo import is_gdal_available as _is_gdal_available
+
+    return _is_gdal_available()
 
 
 def pretty_print_response(response: Response):
